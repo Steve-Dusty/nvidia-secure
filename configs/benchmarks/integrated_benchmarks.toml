@@ -1,0 +1,99 @@
+# Integrated Multi-Modal Benchmark Configuration
+# Tests combined visual + audio emergency detection
+
+[benchmark]
+name = "integrated_emergency_detection"
+version = "1.0.0"
+description = "Comprehensive benchmark for multi-modal emergency detection agents"
+
+[settings]
+timeout_ms = 5000
+max_retries = 2
+max_turns = 10
+
+[settings.resource_limits]
+memory_mb = 1024
+max_concurrent = 2
+
+# Environments to test
+[environments.integrated_all]
+type = "MultiTurnEnv"
+module = "verifiers.environments.integrated_env"
+function = "load_environment"
+scenario = "all"
+num_test_cases = 20
+max_turns = 10
+
+[environments.integrated_fall]
+type = "MultiTurnEnv"
+module = "verifiers.environments.integrated_env"
+function = "load_environment"
+scenario = "fall"
+num_test_cases = 10
+max_turns = 10
+
+[environments.integrated_fight]
+type = "MultiTurnEnv"
+module = "verifiers.environments.integrated_env"
+function = "load_environment"
+scenario = "fight"
+num_test_cases = 10
+max_turns = 10
+
+[environments.integrated_distress]
+type = "MultiTurnEnv"
+module = "verifiers.environments.integrated_env"
+function = "load_environment"
+scenario = "distress"
+num_test_cases = 10
+max_turns = 10
+
+# Rubrics configuration
+[rubrics.emergency_classification]
+weight = 2.0
+severity_aware = true
+
+[rubrics.dispatch_decision]
+weight = 2.0
+
+[rubrics.fusion_quality]
+weight = 1.5
+
+[rubrics.fall_detection]
+weight = 1.5
+false_negative_penalty = 1.5
+
+[rubrics.fight_detection]
+weight = 1.5
+false_negative_penalty = 1.5
+
+[rubrics.distress_detection]
+weight = 1.5
+false_negative_penalty = 1.5
+
+[rubrics.severity]
+weight = 1.0
+tolerance = 1
+
+[rubrics.keyword_detection]
+weight = 1.0
+
+[rubrics.alert_timing]
+weight = 1.0
+early_tolerance = 2
+late_tolerance = 1
+
+[rubrics.latency]
+weight = 0.5
+max_latency_ms = 500
+target_latency_ms = 200
+
+# Agents to evaluate
+[agents.nvidia_nim_integrated]
+class = "cuML.nvidia_nim_integrated.NVIDIANIMIntegratedSystem"
+init_kwargs = {}
+
+# Scoring
+[scoring]
+pass_threshold = 0.7
+weights_normalized = true

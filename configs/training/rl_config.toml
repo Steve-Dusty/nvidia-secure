@@ -1,0 +1,99 @@
+# RL Training Configuration
+# Used with verifiers.training.RLTrainer
+
+[training]
+num_epochs = 100
+batch_size = 32
+learning_rate = 1e-4
+max_steps_per_episode = 50
+
+# Checkpointing
+checkpoint_every = 10
+checkpoint_dir = "./checkpoints"
+
+# Logging
+log_every = 1
+verbose = true
+
+[reward_shaping]
+# Discount factor for future rewards
+gamma = 0.99
+
+# Normalize rewards for training stability
+normalize = true
+normalize_window = 100
+
+# Reward clipping bounds
+clip_min = -10.0
+clip_max = 10.0
+
+# Bonus/penalty multipliers
+correct_dispatch_bonus = 1.0
+missed_dispatch_penalty = -2.0  # Missing a real emergency is dangerous
+false_alarm_penalty = -0.5      # False alarms are wasteful but less severe
+early_detection_bonus = 0.5     # Per turn detected early
+
+[reward_shaping.rubric_weights]
+# Override weights for specific rubrics
+emergency_classification = 2.0
+dispatch_decision = 2.0
+fusion_quality = 1.5
+fall_detection = 1.5
+fight_detection = 1.5
+distress_detection = 1.5
+severity = 1.0
+keyword_detection = 1.0
+alert_timing = 1.0
+latency = 0.5
+
+[environment]
+name = "integrated_emergency_detection"
+max_turns = 10
+timeout_ms = 5000
+
+[environment.resource_limits]
+memory_mb = 1024
+max_concurrent = 2
+
+[agent]
+# Agent configuration
+model = "nvidia_nim_integrated"
+temperature = 0.1
+
+[export]
+# Export settings for prime-rl
+format = "jsonl"
+output_dir = "./training_data"
+
+# SFT export settings
+sft_min_reward = 0.5
+sft_format = "input_output"  # or "chat"
+
+# RL export settings
+include_returns = true
+include_advantages = true
+
+# Preference learning
+preference_pairs = false
+
+[scenarios]
+# Scenario configurations for training
+[scenarios.fall]
+weight = 0.25  # 25% of training data
+alert_turn_range = [2, 5]
+
+[scenarios.fight]
+weight = 0.20
+alert_turn_range = [1, 3]
+
+[scenarios.distress]
+weight = 0.20
+alert_turn_range = [2, 4]
+
+[scenarios.medical]
+weight = 0.15
+alert_turn_range = [2, 4]
+
+[scenarios.normal]
+weight = 0.20  # Include normal scenarios to reduce false positives
+alert_turn_range = [-1, -1]  # No alert expected
