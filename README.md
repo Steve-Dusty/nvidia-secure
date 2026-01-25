@@ -42,7 +42,7 @@ cd webapp && npm install && npm start
 │                              │                                              │
 │                              ▼                                              │
 │   ┌─────────────────────────────────────────────────────────────────────┐  │
-│   │                    NVIDIA NIM CLOUD INFERENCE                        │  │
+│   │                  NVIDIA NIM LOCAL INFERENCE (SELF-HOSTED)            │  │
 │   ├─────────────────────────────────────────────────────────────────────┤  │
 │   │                                                                      │  │
 │   │  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐  │  │
@@ -100,14 +100,14 @@ cd webapp && npm install && npm start
 
 | Component | NVIDIA Technology | Model/Service |
 |-----------|------------------|---------------|
-| Scene Understanding | NIM Cloud | Florence-2 |
-| Person Detection | NIM Cloud | Grounding DINO |
-| Segmentation | NIM Cloud | SAM2 Hiera Large |
-| Pose Estimation | NIM Cloud | BodyPose Estimation |
-| Speech Recognition | NIM Cloud | Parakeet CTC 1.1B |
-| Multilingual ASR | NIM Cloud | Canary 1B |
-| Sound Classification | NIM Cloud | Audio Embedding |
-| Emergency Dispatch | NGC | Llama 3 70B (Fine-tuned) |
+| Scene Understanding | NIM (Self-hosted) | Florence-2 |
+| Person Detection | NIM (Self-hosted) | Grounding DINO |
+| Segmentation | NIM (Self-hosted) | SAM2 Hiera Large |
+| Pose Estimation | NIM (Self-hosted) | BodyPose Estimation |
+| Speech Recognition | NIM (Self-hosted) | Parakeet CTC 1.1B |
+| Multilingual ASR | NIM (Self-hosted) | Canary 1B |
+| Sound Classification | NIM (Self-hosted) | Audio Embedding |
+| Emergency Dispatch | NIM (Self-hosted) | Llama 3 70B (Fine-tuned) |
 | Edge Deployment | DGX Spark | ARM-optimized inference |
 
 ## Environment Variables
@@ -233,13 +233,9 @@ docker-compose up -d
 
 ## Known Limitations
 
-1. **Network Latency**: NIM cloud inference adds 100-300ms latency per frame. For real-time applications, consider edge deployment with DGX Spark.
+1. **Audio Streaming**: Current implementation sends audio in chunks. Continuous streaming would improve real-time ASR performance.
 
-2. **API Rate Limits**: Free tier NIM API has rate limits. Production deployments should use paid tier or self-hosted NIM containers.
-
-3. **Audio Streaming**: Current implementation sends audio in chunks. Continuous streaming would improve real-time ASR performance.
-
-4. **Multi-Camera Scale**: WebSocket backend processes cameras sequentially. Parallel processing would improve throughput for 50+ cameras.
+2. **Multi-Camera Scale**: WebSocket backend processes cameras sequentially. Parallel processing would improve throughput for 50+ cameras.
 
 ## License
 
@@ -247,6 +243,6 @@ MIT License - See LICENSE file for details.
 
 ## Acknowledgments
 
-- NVIDIA NIM Team for cloud inference APIs
-- NVIDIA NGC for Llama model hosting
+- NVIDIA NIM for self-hosted inference containers
+- NVIDIA NGC for model access
 - San Francisco Open Data Portal for public datasets
