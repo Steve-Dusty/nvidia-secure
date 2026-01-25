@@ -493,25 +493,25 @@ class MedicalEmergencyDetector:
 
 
 # ============================================================================
-# PERSON DETECTION (Using OpenCV DNN or YOLOv5)
+# PERSON DETECTION (DEPRECATED - Use nvidia_nim_visual.py instead)
 # ============================================================================
 
 class PersonDetector:
-    """Detect and track people in frame"""
+    """
+    Detect and track people in frame.
 
-    def __init__(self, model_type: str = "yolo"):
+    DEPRECATED: This class uses local OpenCV DNN for person detection.
+    For production use, migrate to nvidia_nim_visual.py which uses
+    NVIDIA NIM hosted models (Grounding DINO, Florence-2, BodyPose).
+
+    See: nvidia_nim_visual.py for cloud-based inference
+    """
+
+    def __init__(self, model_type: str = "opencv"):
+        print("WARNING: PersonDetector is DEPRECATED. Use nvidia_nim_visual.py instead.")
+        print("  - NVIDIA NIM provides better accuracy with cloud-hosted models")
+        print("  - Models: nvidia/grounding-dino, microsoft/florence-2")
         self.model_type = model_type
-
-        if model_type == "yolo":
-            self._init_yolo()
-        else:
-            self._init_opencv_dnn()
-
-    def _init_yolo(self):
-        """Initialize YOLOv5 for person detection"""
-        # This would load a YOLOv5 model
-        # Placeholder - in production, load actual YOLO weights
-        print("⚠️ YOLOv5 not implemented - using OpenCV DNN fallback")
         self._init_opencv_dnn()
 
     def _init_opencv_dnn(self):

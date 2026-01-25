@@ -1,0 +1,89 @@
+#===============================================================================
+# NVIDIA NIM Inference - Docker Image for ARM64 (DGX Spark)
+#===============================================================================
+#
+# Multi-stage build optimized for ARM64 architecture.
+# Target: NVIDIA DGX Spark with Grace CPU
+#
+# Build:
+#   docker build -t nvidia-nim-arm:latest -f Dockerfile.arm .
+#
+# Run:
+#   docker run -e NVIDIA_API_KEY=$NVIDIA_API_KEY nvidia-nim-arm:latest
+#
+# With webcam:
+#   docker run --device=/dev/video0 -e NVIDIA_API_KEY=$NVIDIA_API_KEY \
+#       nvidia-nim-arm:latest --webcam
+#
+#===============================================================================
+
+# Use NVIDIA base image for ARM64
+FROM nvcr.io/nvidia/l4t-base:r35.4.1 AS base
+
+# Alternative: Use standard ARM64 Python image
+# FROM arm64v8/python:3.11-slim AS base
+
+LABEL maintainer="NVIDIA NIM Inference"
+LABEL description="ARM64-optimized inference using NVIDIA NIM"
+LABEL architecture="aarch64"
+
+#-------------------------------------------------------------------------------
+# Environment Setup
+#-------------------------------------------------------------------------------
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+
+# ARM64 optimizations
+ENV OPENBLAS_NUM_THREADS=4
+ENV OMP_NUM_THREADS=4
+
+#-------------------------------------------------------------------------------
+# System Dependencies
+#-------------------------------------------------------------------------------
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 \
+    python3-pip \
+    python3-dev \
+    libopencv-dev \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libgl1-mesa-glx \
+    && rm -rf /var/lib/apt/lists/*
+
+#-------------------------------------------------------------------------------
+# Python Dependencies
+#-------------------------------------------------------------------------------
+WORKDIR /app
+
+# Copy requirements first for layer caching
+COPY requirements_arm.txt .
+
+RUN pip3 install --no-cache-dir --upgrade pip && \
+    pip3 install --no-cache-dir -r requirements_arm.txt
+
+#-------------------------------------------------------------------------------
+# Application Code
+#-------------------------------------------------------------------------------
+COPY nvidia_nim_visual.py .
+COPY nvidia_nim_audio.py .
+COPY nvidia_nim_integrated.py .
+COPY nim_inference_arm.py .
+
+#-------------------------------------------------------------------------------
+# Runtime Configuration
+#-------------------------------------------------------------------------------
+# Default to headless mode in container
+ENV DISPLAY=""
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python3 -c "import nvidia_nim_visual; print('OK')" || exit 1
+
+#-------------------------------------------------------------------------------
+# Entrypoint
+#-------------------------------------------------------------------------------
+ENTRYPOINT ["python3", "nim_inference_arm.py"]
+CMD ["--help"]

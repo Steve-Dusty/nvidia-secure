@@ -1,0 +1,19 @@
+# NVIDIA NIM Inference - ARM64 Dependencies
+# Optimized for NVIDIA DGX Spark (aarch64)
+
+# Core - API communication
+requests>=2.31.0
+
+# Computer Vision - ARM-optimized
+# Use headless version for server/container deployment
+opencv-python-headless>=4.8.0
+
+# Numerical - Uses ARM NEON optimizations automatically
+numpy>=1.24.0
+
+# Configuration
+python-dotenv>=1.0.0
+
+# Optional: Audio processing
+# scipy>=1.11.0
+# sounddevice>=0.4.6
