@@ -29,11 +29,6 @@ cert.pem
 key.pem
 
 # Video files
-webapp/videos/
-*.mp4
-*.avi
-*.mov
-*.mkv
 
 # IDE
 .vscode/
