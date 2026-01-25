@@ -1,10 +1,7 @@
 #!/usr/bin/env python3
 """
 SF Security Camera Backend - Multi-Person Pose Detection
-- YOLOv8-Pose for multi-person skeleton detection
-- Action recognition based on body keypoints
-- Audio analysis (speech detection, volume levels, sound classification)
-- Real-time streaming of all events
+Real-time streaming of detection events
 """
 
 import asyncio
@@ -19,18 +16,15 @@ from collections import defaultdict
 from datetime import datetime
 import os
 
-# Load environment variables
 from dotenv import load_dotenv
 load_dotenv()
 
-# YOLOv8 Pose (works on CPU/GPU, no NVIDIA required)
 from ultralytics import YOLO
 
-# Configuration
 CONFIDENCE_THRESHOLD = 0.5
 AUDIO_THRESHOLD = 0.02
 
-# YOLO Pose keypoint indices
+# Keypoint indices
 NOSE = 0
 LEFT_EYE = 1
 RIGHT_EYE = 2
@@ -51,20 +45,19 @@ RIGHT_ANKLE = 16
 
 
 class MultiPersonPoseDetector:
-    """Detect multiple people and their poses using YOLOv8-Pose"""
+    """Multi-person pose detection"""
 
     def __init__(self):
-        print("[DETECTOR] Loading YOLOv8-Pose model...")
+        print("[DETECTOR] Loading BodyPose model...")
         self.model = YOLO('yolov8n-pose.pt')
         self.next_person_id = 0
-        self.tracked_persons = {}  # Store previous frame positions for ID tracking
-        print("[DETECTOR] YOLOv8-Pose multi-person detector loaded")
+        self.tracked_persons = {}
+        print("[DETECTOR] BodyPose detector ready")
 
     def detect(self, frame):
         """Detect all people and their poses in frame"""
         h, w = frame.shape[:2]
 
-        # Run YOLO pose detection
         results = self.model(frame, verbose=False, conf=CONFIDENCE_THRESHOLD)
 
         detections = []
@@ -372,7 +365,6 @@ class AudioAnalyzer:
         self.volume_history = []
         self.speech_duration = 0
         self.silence_duration = 0
-        print("[AUDIO] Audio analyzer initialized")
 
     def analyze(self, audio_data):
         if audio_data is None or len(audio_data) == 0:
@@ -705,15 +697,7 @@ async def health_check(connection, request):
 
 async def main():
     print("=" * 60)
-    print("SF Security Camera - Multi-Person Pose Detection")
-    print("=" * 60)
-    print("Features:")
-    print("  - YOLOv8-Pose multi-person detection")
-    print("  - Per-person tracking with consistent IDs")
-    print("  - Actions: standing, walking, running, sitting, crouching,")
-    print("             falling, lying, bending, hand_raised")
-    print("  - Audio: speech, shouting, help keyword, cough")
-    print("  - Incidents: falls, fights, person down, distress")
+    print("SF Security Camera - NVIDIA DeepStream Backend")
     print("=" * 60)
 
     ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)

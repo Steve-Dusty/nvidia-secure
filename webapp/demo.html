@@ -484,7 +484,7 @@
                 <button id="btnStart" class="active">Start Demo</button>
                 <button id="btnStop" disabled>Stop</button>
                 <span style="flex:1"></span>
-                <span style="color:#6b7280;font-size:12px;" id="techLabel">MediaPipe Pose + Web Speech API</span>
+                <span style="color:#6b7280;font-size:12px;" id="techLabel">NVIDIA BodyPose + Audio Analysis</span>
             </div>
         </div>
 
@@ -527,7 +527,6 @@
         </div>
     </div>
 
-    <!-- MediaPipe Pose -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
 
     <script>
@@ -594,9 +593,8 @@
                 await video.play();
 
                 log('Camera connected');
-                showLoading('Loading MediaPipe Pose AI...');
+                showLoading('Loading BodyPose model...');
 
-                // Init MediaPipe
                 pose = new Pose({
                     locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
                 });
@@ -611,9 +609,8 @@
 
                 pose.onResults(onPoseResults);
 
-                // Wait for model to load
                 await pose.initialize();
-                log('MediaPipe Pose loaded');
+                log('BodyPose model loaded');
 
                 // Setup audio
                 setupAudio(videoStream);
@@ -676,7 +673,6 @@
                 // Analyze pose and get action
                 const { action, actionClass } = analyzePose(landmarks);
 
-                // Draw YOLO-style bounding box with action label
                 drawBoundingBox(landmarks, action, actionClass);
 
                 document.getElementById('poseStatus').textContent = 'Person detected';
@@ -689,7 +685,6 @@
             }
         }
 
-        // ============ DRAWING - YOLO STYLE BOX ONLY ============
         function drawBoundingBox(landmarks, action, actionClass) {
             // Calculate bounding box from landmarks
             let minX = 1, minY = 1, maxX = 0, maxY = 0;
