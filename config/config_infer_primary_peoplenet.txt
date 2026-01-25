@@ -1,0 +1,27 @@
+[property]
+gpu-id=0
+net-scale-factor=0.0039215697906911373
+tlt-model-key=tlt_encode
+tlt-encoded-model=/app/models/peoplenet/resnet34_peoplenet_int8.etlt
+model-engine-file=/app/models/peoplenet/resnet34_peoplenet_int8.etlt_b4_gpu0_int8.engine
+labelfile-path=/app/models/peoplenet/labels.txt
+int8-calib-file=/app/models/peoplenet/resnet34_peoplenet_int8.txt
+batch-size=4
+process-mode=1
+model-color-format=0
+network-mode=1
+num-detected-classes=3
+interval=0
+gie-unique-id=1
+output-blob-names=output_cov/Sigmoid;output_bbox/BiasAdd
+cluster-mode=2
+
+[class-attrs-all]
+nms-iou-threshold=0.5
+pre-cluster-threshold=0.4
+topk=20
+
+[class-attrs-0]
+# Person class
+nms-iou-threshold=0.5
+pre-cluster-threshold=0.2

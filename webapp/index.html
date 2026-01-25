@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SF Security Camera</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: monospace;
+            background: #0a0a0a;
+            color: #0f0;
+            min-height: 100vh;
+        }
+        header {
+            background: #111;
+            padding: 10px 20px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        h1 { font-size: 18px; }
+        .status { display: flex; align-items: center; gap: 8px; }
+        .dot { width: 10px; height: 10px; border-radius: 50%; background: #666; }
+        .dot.on { background: #0f0; box-shadow: 0 0 10px #0f0; }
+        .container { display: flex; height: calc(100vh - 50px); }
+        .main { flex: 1; display: flex; flex-direction: column; }
+        .video-box {
+            flex: 1; background: #000; position: relative;
+            display: flex; align-items: center; justify-content: center;
+        }
+        video { max-width: 100%; max-height: 100%; }
+        canvas {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%; pointer-events: none;
+        }
+        .overlay {
+            position: absolute; top: 10px; left: 10px;
+            background: rgba(0,0,0,0.7); padding: 5px 10px;
+            font-size: 12px; display: none;
+        }
+        .controls {
+            background: #111; padding: 10px;
+            display: flex; gap: 10px; flex-wrap: wrap;
+        }
+        button {
+            padding: 12px 20px; background: #222; color: #0f0;
+            border: 1px solid #0f0; font-family: monospace;
+            font-size: 14px; cursor: pointer;
+        }
+        button:hover { background: #0f0; color: #000; }
+        button:disabled { opacity: 0.3; cursor: not-allowed; }
+        button.active { background: #0f0; color: #000; }
+        .sidebar {
+            width: 350px; background: #111; border-left: 1px solid #333;
+            display: flex; flex-direction: column; overflow: hidden;
+        }
+        .panel { padding: 10px; border-bottom: 1px solid #222; }
+        .panel h2 { font-size: 12px; color: #666; margin-bottom: 10px; }
+        .stats { display: flex; gap: 10px; }
+        .stat { flex: 1; background: #1a1a1a; padding: 10px; text-align: center; }
+        .stat-val { font-size: 24px; font-weight: bold; }
+        .stat-val.warn { color: #fa0; }
+        .stat-val.danger { color: #f00; }
+        .stat-lbl { font-size: 10px; color: #666; }
+        .meter { height: 20px; background: #222; margin: 10px 0; }
+        .meter-fill { height: 100%; background: linear-gradient(90deg, #0f0, #ff0, #f00); width: 0%; }
+        .log { flex: 1; overflow-y: auto; font-size: 11px; padding: 10px; background: #0a0a0a; }
+        .log-item { padding: 3px 0; border-bottom: 1px solid #1a1a1a; }
+        .log-time { color: #666; }
+        .log-type { font-weight: bold; margin: 0 5px; }
+        .log-type.SYS { color: #666; }
+        .log-type.CAM { color: #0f0; }
+        .log-type.MIC { color: #f0f; }
+        .log-type.DET { color: #0ff; }
+        .log-type.INC { color: #f00; }
+        .placeholder { color: #333; font-size: 14px; }
+        #errorBox { color: #f00; padding: 10px; display: none; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>SF_SECURITY_CAM</h1>
+        <div class="status">
+            <div class="dot" id="dot"></div>
+            <span id="statusTxt">READY</span>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="main">
+            <div class="video-box">
+                <video id="video" autoplay playsinline muted></video>
+                <canvas id="canvas"></canvas>
+                <div class="overlay" id="overlay">
+                    <span id="resolution">--</span> | <span id="fps">0</span> FPS
+                </div>
+                <div class="placeholder" id="placeholder">[ CLICK START CAM ]</div>
+            </div>
+            <div id="errorBox"></div>
+            <div class="controls">
+                <button id="btnCam">START CAM</button>
+                <button id="btnMic">ENABLE MIC</button>
+                <button id="btnConnect">CONNECT BACKEND</button>
+                <button id="btnStop" disabled>STOP</button>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="panel">
+                <h2>STATS</h2>
+                <div class="stats">
+                    <div class="stat">
+                        <div class="stat-val" id="statPpl">0</div>
+                        <div class="stat-lbl">PEOPLE</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-val warn" id="statFall">0</div>
+                        <div class="stat-lbl">FALLS</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-val danger" id="statFight">0</div>
+                        <div class="stat-lbl">FIGHTS</div>
+                    </div>
+                </div>
+                <div class="stats" style="margin-top:10px;">
+                    <div class="stat">
+                        <div class="stat-val danger" id="statHelp">0</div>
+                        <div class="stat-lbl">HELP CALLS</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-val warn" id="statCough">0</div>
+                        <div class="stat-lbl">COUGHS</div>
+                    </div>
+                </div>
+            </div>
+            <div class="panel">
+                <h2>AUDIO</h2>
+                <div class="meter"><div class="meter-fill" id="audioMeter"></div></div>
+                <div style="display:flex;justify-content:space-between;font-size:11px;">
+                    <span id="audioEvt">--</span>
+                    <span id="audioVol">0%</span>
+                </div>
+            </div>
+            <div class="panel" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+                <h2>LOG</h2>
+                <div class="log" id="log"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Elements
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const btnCam = document.getElementById('btnCam');
+        const btnMic = document.getElementById('btnMic');
+        const btnConnect = document.getElementById('btnConnect');
+        const btnStop = document.getElementById('btnStop');
+        const placeholder = document.getElementById('placeholder');
+        const overlay = document.getElementById('overlay');
+        const errorBox = document.getElementById('errorBox');
+        const dot = document.getElementById('dot');
+        const statusTxt = document.getElementById('statusTxt');
+
+        // State
+        let videoStream = null;
+        let audioStream = null;
+        let audioCtx = null;
+        let ws = null;
+        let sendInterval = null;
+        let fpsCount = 0;
+        let speechRecognition = null;
+        let audioAnalyzerNode = null;
+        let lastCoughTime = 0;
+
+        // Log function
+        function log(type, msg) {
+            const logEl = document.getElementById('log');
+            const time = new Date().toTimeString().slice(0,8);
+            const div = document.createElement('div');
+            div.className = 'log-item';
+            div.innerHTML = '<span class="log-time">' + time + '</span><span class="log-type ' + type + '">' + type + '</span>' + msg;
+            logEl.insertBefore(div, logEl.firstChild);
+            if (logEl.children.length > 100) logEl.removeChild(logEl.lastChild);
+        }
+
+        function showError(msg) {
+            errorBox.textContent = 'ERROR: ' + msg;
+            errorBox.style.display = 'block';
+            setTimeout(function() { errorBox.style.display = 'none'; }, 5000);
+        }
+
+        function setStatus(on, txt) {
+            dot.className = on ? 'dot on' : 'dot';
+            statusTxt.textContent = txt;
+        }
+
+        // START CAMERA
+        btnCam.addEventListener('click', async function() {
+            log('SYS', 'Starting camera...');
+            try {
+                videoStream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: { ideal: 1280 }, height: { ideal: 720 } },
+                    audio: false
+                });
+                video.srcObject = videoStream;
+                await video.play();
+
+                placeholder.style.display = 'none';
+                overlay.style.display = 'block';
+
+                const settings = videoStream.getVideoTracks()[0].getSettings();
+                document.getElementById('resolution').textContent = settings.width + 'x' + settings.height;
+
+                btnCam.disabled = true;
+                btnStop.disabled = false;
+                setStatus(true, 'CAMERA ON');
+                log('CAM', 'Camera started ' + settings.width + 'x' + settings.height);
+
+                // Start sending frames if connected
+                startSending();
+
+                // FPS counter
+                setInterval(function() {
+                    document.getElementById('fps').textContent = fpsCount;
+                    fpsCount = 0;
+                }, 1000);
+
+            } catch (err) {
+                log('SYS', 'Camera error: ' + err.message);
+                showError(err.message);
+            }
+        });
+
+        // ENABLE MIC
+        btnMic.addEventListener('click', async function() {
+            if (!audioStream) {
+                log('SYS', 'Enabling microphone...');
+                try {
+                    audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    const source = audioCtx.createMediaStreamSource(audioStream);
+                    const processor = audioCtx.createScriptProcessor(4096, 1, 1);
+
+                    // Create analyzer for frequency analysis (cough detection)
+                    audioAnalyzerNode = audioCtx.createAnalyser();
+                    audioAnalyzerNode.fftSize = 2048;
+                    source.connect(audioAnalyzerNode);
+
+                    processor.onaudioprocess = function(e) {
+                        const data = e.inputBuffer.getChannelData(0);
+                        window.lastAudio = Array.from(data);
+
+                        // Update local meter
+                        const rms = Math.sqrt(data.reduce((a, b) => a + b * b, 0) / data.length);
+                        const pct = Math.min(rms * 500, 100);
+                        document.getElementById('audioMeter').style.width = pct + '%';
+                        document.getElementById('audioVol').textContent = pct.toFixed(0) + '%';
+
+                        // Cough detection using frequency analysis
+                        detectCough(rms);
+                    };
+
+                    source.connect(processor);
+                    processor.connect(audioCtx.destination);
+
+                    // Start speech recognition for "help" detection
+                    startSpeechRecognition();
+
+                    btnMic.textContent = 'DISABLE MIC';
+                    btnMic.classList.add('active');
+                    log('MIC', 'Microphone enabled');
+                    log('MIC', 'Speech recognition active - listening for "help"');
+
+                } catch (err) {
+                    log('SYS', 'Mic error: ' + err.message);
+                    showError(err.message);
+                }
+            } else {
+                audioStream.getTracks().forEach(function(t) { t.stop(); });
+                audioStream = null;
+                if (audioCtx) audioCtx.close();
+                audioCtx = null;
+                if (speechRecognition) {
+                    speechRecognition.stop();
+                    speechRecognition = null;
+                }
+                btnMic.textContent = 'ENABLE MIC';
+                btnMic.classList.remove('active');
+                document.getElementById('audioMeter').style.width = '0%';
+                document.getElementById('audioEvt').textContent = '--';
+                log('MIC', 'Microphone disabled');
+            }
+        });
+
+        // Speech Recognition for "help" keyword
+        function startSpeechRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                log('SYS', 'Speech recognition not supported in this browser');
+                return;
+            }
+
+            speechRecognition = new SpeechRecognition();
+            speechRecognition.continuous = true;
+            speechRecognition.interimResults = true;
+            speechRecognition.lang = 'en-US';
+
+            let isTalking = false;
+            let talkingTimeout = null;
+
+            speechRecognition.onresult = function(event) {
+                // User is talking
+                if (!isTalking) {
+                    isTalking = true;
+                    document.getElementById('audioEvt').textContent = 'TALKING';
+                    sendAudioAlert('talking', 'Speech detected');
+                }
+
+                // Reset talking timeout
+                clearTimeout(talkingTimeout);
+                talkingTimeout = setTimeout(function() {
+                    isTalking = false;
+                    document.getElementById('audioEvt').textContent = '--';
+                }, 1500);
+
+                // Check for "help" keyword
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const transcript = event.results[i][0].transcript.toLowerCase();
+                    if (transcript.includes('help')) {
+                        log('INC', 'HELP keyword detected: "' + transcript + '"');
+                        document.getElementById('audioEvt').textContent = 'HELP!';
+                        sendAudioAlert('help', 'Help keyword detected: ' + transcript);
+                    }
+                }
+            };
+
+            speechRecognition.onerror = function(event) {
+                if (event.error !== 'no-speech' && event.error !== 'aborted') {
+                    log('SYS', 'Speech recognition error: ' + event.error);
+                }
+            };
+
+            speechRecognition.onend = function() {
+                // Restart if still enabled
+                if (audioStream && speechRecognition) {
+                    try {
+                        speechRecognition.start();
+                    } catch (e) {}
+                }
+            };
+
+            try {
+                speechRecognition.start();
+            } catch (e) {
+                log('SYS', 'Could not start speech recognition');
+            }
+        }
+
+        // Cough detection based on audio characteristics
+        function detectCough(rms) {
+            if (!audioAnalyzerNode) return;
+
+            const now = Date.now();
+            if (now - lastCoughTime < 1000) return; // Debounce
+
+            // Get frequency data
+            const bufferLength = audioAnalyzerNode.frequencyBinCount;
+            const freqData = new Uint8Array(bufferLength);
+            audioAnalyzerNode.getByteFrequencyData(freqData);
+
+            // Cough characteristics:
+            // - Sudden burst of energy (high RMS spike)
+            // - Broadband frequency content (energy across many frequencies)
+            // - Short duration
+
+            if (rms > 0.15) { // Loud sound
+                // Calculate spectral spread (coughs have wide frequency content)
+                let lowFreq = 0, midFreq = 0, highFreq = 0;
+                const third = Math.floor(bufferLength / 3);
+
+                for (let i = 0; i < third; i++) lowFreq += freqData[i];
+                for (let i = third; i < third * 2; i++) midFreq += freqData[i];
+                for (let i = third * 2; i < bufferLength; i++) highFreq += freqData[i];
+
+                lowFreq /= third;
+                midFreq /= third;
+                highFreq /= (bufferLength - third * 2);
+
+                // Coughs typically have energy in low-mid frequencies with some high freq
+                // and are more "spread" than speech which is more focused
+                const totalEnergy = lowFreq + midFreq + highFreq;
+                const spread = Math.min(lowFreq, midFreq, highFreq) / Math.max(lowFreq, midFreq, highFreq, 1);
+
+                // Heuristic: loud, broadband burst = possible cough
+                if (totalEnergy > 150 && spread > 0.3 && midFreq > 40) {
+                    lastCoughTime = now;
+                    log('INC', 'COUGH detected');
+                    document.getElementById('audioEvt').textContent = 'COUGH';
+                    sendAudioAlert('cough', 'Coughing detected');
+                    setTimeout(function() {
+                        if (document.getElementById('audioEvt').textContent === 'COUGH') {
+                            document.getElementById('audioEvt').textContent = '--';
+                        }
+                    }, 2000);
+                }
+            }
+        }
+
+        // Send audio alert to backend and log
+        function sendAudioAlert(type, description) {
+            const alert = {
+                type: 'audio_alert',
+                alert_type: type,
+                description: description,
+                timestamp: new Date().toISOString()
+            };
+
+            // Send to backend if connected
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify(alert));
+            }
+
+            // Visual feedback
+            const audioEvt = document.getElementById('audioEvt');
+            audioEvt.style.color = type === 'help' ? '#f00' : type === 'cough' ? '#fa0' : '#0f0';
+            setTimeout(function() { audioEvt.style.color = ''; }, 2000);
+        }
+
+        // CONNECT BACKEND
+        btnConnect.addEventListener('click', function() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.close();
+                return;
+            }
+
+            const url = 'wss://' + window.location.hostname + ':8765';
+            log('SYS', 'Connecting to ' + url);
+
+            try {
+                ws = new WebSocket(url);
+
+                ws.onopen = function() {
+                    log('SYS', 'Backend connected!');
+                    btnConnect.textContent = 'DISCONNECT';
+                    btnConnect.classList.add('active');
+                    setStatus(true, 'CONNECTED');
+                    startSending();
+                };
+
+                ws.onmessage = function(e) {
+                    handleMessage(JSON.parse(e.data));
+                };
+
+                ws.onclose = function() {
+                    log('SYS', 'Backend disconnected');
+                    btnConnect.textContent = 'CONNECT BACKEND';
+                    btnConnect.classList.remove('active');
+                    setStatus(videoStream ? true : false, videoStream ? 'CAMERA ON' : 'READY');
+                };
+
+                ws.onerror = function() {
+                    log('SYS', 'Connection failed! Accept cert at :8765 first');
+                    showError('WebSocket failed. Visit https://' + window.location.hostname + ':8765 first to accept certificate.');
+                };
+
+            } catch (err) {
+                log('SYS', 'WebSocket error: ' + err.message);
+                showError(err.message);
+            }
+        });
+
+        // STOP
+        btnStop.addEventListener('click', function() {
+            if (videoStream) {
+                videoStream.getTracks().forEach(function(t) { t.stop(); });
+                videoStream = null;
+            }
+            video.srcObject = null;
+            placeholder.style.display = 'block';
+            overlay.style.display = 'none';
+            btnCam.disabled = false;
+            btnStop.disabled = true;
+            clearCanvas();
+            setStatus(false, 'STOPPED');
+            log('SYS', 'Camera stopped');
+        });
+
+        // Send frames to backend
+        function startSending() {
+            if (sendInterval) return;
+
+            sendInterval = setInterval(function() {
+                if (!ws || ws.readyState !== WebSocket.OPEN) return;
+                if (!videoStream) return;
+
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = video.videoWidth;
+                tempCanvas.height = video.videoHeight;
+                if (tempCanvas.width === 0) return;
+
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCtx.drawImage(video, 0, 0);
+
+                const msg = {
+                    type: 'frame',
+                    data: tempCanvas.toDataURL('image/jpeg', 0.6),
+                    width: tempCanvas.width,
+                    height: tempCanvas.height
+                };
+
+                if (window.lastAudio) {
+                    msg.audio = window.lastAudio;
+                    window.lastAudio = null;
+                }
+
+                ws.send(JSON.stringify(msg));
+                fpsCount++;
+
+            }, 100);
+        }
+
+        // Handle backend messages
+        function handleMessage(data) {
+            // Draw detections
+            if (data.actions && data.actions.length > 0) {
+                drawBoxes(data.actions);
+            } else {
+                clearCanvas();
+            }
+
+            // Stats
+            if (data.stats) {
+                document.getElementById('statPpl').textContent = data.stats.people || 0;
+                document.getElementById('statFall').textContent = data.stats.falls || 0;
+                document.getElementById('statFight').textContent = data.stats.fights || 0;
+                document.getElementById('statHelp').textContent = data.stats.help_calls || 0;
+                document.getElementById('statCough').textContent = data.stats.coughs || 0;
+            }
+
+            // Audio from backend
+            if (data.audio) {
+                document.getElementById('audioEvt').textContent = data.audio.event || (data.audio.is_sound ? 'SOUND' : 'SILENT');
+            }
+
+            // Log detections
+            if (data.actions) {
+                data.actions.forEach(function(a) {
+                    if (a.action !== 'unknown') {
+                        log('DET', 'Person #' + a.person_id + ': ' + a.action);
+                    }
+                });
+            }
+
+            // Incidents
+            if (data.incidents) {
+                data.incidents.forEach(function(inc) {
+                    log('INC', inc.type + ': ' + inc.description);
+                });
+            }
+        }
+
+        // Draw bounding boxes
+        function drawBoxes(actions) {
+            canvas.width = video.offsetWidth;
+            canvas.height = video.offsetHeight;
+
+            const vw = video.videoWidth;
+            const vh = video.videoHeight;
+            const cw = canvas.width;
+            const ch = canvas.height;
+
+            // Calculate scaling for object-fit: contain
+            const scale = Math.min(cw / vw, ch / vh);
+            const drawW = vw * scale;
+            const drawH = vh * scale;
+            const offsetX = (cw - drawW) / 2;
+            const offsetY = (ch - drawH) / 2;
+
+            ctx.clearRect(0, 0, cw, ch);
+
+            actions.forEach(function(a) {
+                const b = a.bbox;
+                const x = offsetX + b.x * drawW;
+                const y = offsetY + b.y * drawH;
+                const w = b.width * drawW;
+                const h = b.height * drawH;
+
+                // Color by action
+                let color = '#0f0';
+                if (a.action === 'falling') color = '#f00';
+                else if (a.action === 'lying') color = '#f60';
+                else if (a.action === 'running') color = '#0ff';
+                else if (a.action === 'walking') color = '#08f';
+                else if (a.action === 'sitting') color = '#ff0';
+                else if (a.action === 'crouching') color = '#f0f';
+                else if (a.action === 'bending') color = '#fa0';
+                else if (a.action === 'hand_raised') color = '#f0f';
+
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 2;
+                ctx.strokeRect(x, y, w, h);
+
+                // Label
+                const label = '#' + a.person_id + ' ' + a.action.toUpperCase();
+                ctx.font = 'bold 12px monospace';
+                const tw = ctx.measureText(label).width;
+                ctx.fillStyle = color;
+                ctx.fillRect(x, y - 16, tw + 6, 16);
+                ctx.fillStyle = '#000';
+                ctx.fillText(label, x + 3, y - 4);
+            });
+        }
+
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // Init
+        log('SYS', 'System ready');
+    </script>
+</body>
+</html>

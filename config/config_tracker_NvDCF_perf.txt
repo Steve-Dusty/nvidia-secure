@@ -1,0 +1,36 @@
+%YAML:1.0
+
+NvMOTConfig:
+  version: 1
+
+  configNvMOT:
+    uniqueID: 2
+    computeTarget: 0
+    tensorPrecision: 2
+
+  configNvDCF:
+    filterLr: 0.075
+    sigma_lq: 0.7
+    minBoxSizePct: 0.0025
+    maxShadow_tracking_age: 30
+    useBufferedOutput: 0
+
+  configTracker:
+    maxTargets: 100
+    probationAge: 3
+    maxShadowTrackingAge: 30
+    earlyTerminationAge: 1
+    minVis4Static: 0.6
+    staticCandidateAge: 10
+    staticTargetAge: 15
+    reidMatchingScore: 0.6
+
+  configAssociate:
+    minMatchingScore4Overall: 0.0
+    minMatchingScore4ReidMatching: 0.5
+    matchingScoreWeight4TextureSimilarity: 0.6
+    matchingScoreWeight4SizeSimilarity: 0.0
+    matchingScoreWeight4Iou: 0.3
+    matchingScoreWeight4VisualSimilarity: 0.3
+    tentativeDetectorConfidence: 0.2
+    featureImgSizeLevel: 3

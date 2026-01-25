@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  deepstream:
+    image: nvcr.io/nvidia/deepstream:7.1-samples-multiarch
+    container_name: sf-security-cam
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu, compute, utility, video]
+    environment:
+      - NVIDIA_DRIVER_CAPABILITIES=all
+      - DISPLAY=${DISPLAY}
+    volumes:
+      - ./config:/app/config:ro
+      - ./scripts:/app/scripts:ro
+      - ./models:/app/models
+      - ./recordings:/app/recordings
+      - ./logs:/app/logs
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    network_mode: host
+    privileged: true
+    stdin_open: true
+    tty: true
+    command: python3 /app/scripts/sf_security_pipeline.py
+    restart: unless-stopped
+
+  webapp:
+    image: node:20-alpine
+    container_name: sf-security-webapp
+    working_dir: /app
+    volumes:
+      - ./webapp:/app
+      - ./recordings:/app/public/recordings:ro
+      - ./logs:/app/logs:ro
+    ports:
+      - "3000:3000"
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    depends_on:
+      - deepstream
+    restart: unless-stopped
