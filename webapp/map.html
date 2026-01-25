@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nimverse - Community Monitor</title>
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet" />
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f1419;
+            color: #e7e9ea;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(180deg, #1a1f26 0%, #0f1419 100%);
+            padding: 0 24px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 56px;
+            position: relative;
+            z-index: 1000;
+        }
+        .logo { display: flex; align-items: center; gap: 12px; }
+        .logo-icon {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, #76b900 0%, #1a1a1a 100%);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 14px; color: white;
+        }
+        h1 {
+            font-size: 18px; font-weight: 600;
+            background: linear-gradient(90deg, #e7e9ea 0%, #76b900 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .header-nav { display: flex; gap: 8px; }
+        .nav-btn {
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            color: #9ca3af;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .nav-btn:hover { background: rgba(255,255,255,0.1); color: #e7e9ea; }
+        .nav-btn.active {
+            background: linear-gradient(135deg, #76b900 0%, #1a1a1a 100%);
+            border-color: transparent;
+            color: white;
+        }
+        .header-right { display: flex; align-items: center; gap: 20px; font-size: 13px; color: #9ca3af; }
+        .status-indicator {
+            display: flex; align-items: center; gap: 8px;
+            padding: 6px 12px;
+            background: rgba(118, 185, 0, 0.1);
+            border-radius: 20px;
+            border: 1px solid rgba(118, 185, 0, 0.2);
+        }
+        .status-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: #76b900; animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(118, 185, 0, 0.4); }
+            50% { opacity: 0.8; box-shadow: 0 0 0 4px rgba(118, 185, 0, 0); }
+        }
+        .status-text { color: #76b900; font-weight: 500; }
+
+        .container { display: flex; height: calc(100vh - 56px); }
+
+        #map { flex: 1; position: relative; }
+
+        .map-info {
+            position: absolute; top: 16px; left: 16px;
+            background: rgba(15, 20, 25, 0.9);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 16px;
+            z-index: 100;
+            min-width: 180px;
+        }
+        .map-info h3 {
+            font-size: 11px; color: #6b7280;
+            letter-spacing: 0.5px; margin-bottom: 8px; text-transform: uppercase;
+        }
+        .coord-display {
+            font-size: 12px;
+            font-family: 'SF Mono', Monaco, monospace;
+            color: #e7e9ea;
+            line-height: 1.6;
+        }
+        .coord-display span { color: #76b900; }
+
+        .sidebar {
+            width: 360px;
+            background: #1a1f26;
+            border-left: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .sidebar-section { padding: 16px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .sidebar-section h3 {
+            font-size: 12px; color: #6b7280;
+            letter-spacing: 0.5px; margin-bottom: 12px;
+            text-transform: uppercase; font-weight: 600;
+        }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .stat-box {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 10px;
+            padding: 14px 10px;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        .stat-box:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); }
+        .stat-val { font-size: 28px; font-weight: 700; line-height: 1; }
+        .stat-val.green { color: #76b900; }
+        .stat-val.amber { color: #f59e0b; }
+        .stat-val.red { color: #ef4444; }
+        .stat-lbl {
+            font-size: 10px; color: #6b7280; margin-top: 6px;
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+
+        .camera-list { max-height: 220px; overflow-y: auto; margin: 0 -8px; padding: 0 8px; }
+        .camera-item {
+            display: flex; align-items: center;
+            padding: 10px;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 8px;
+            margin-bottom: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .camera-item:hover { background: rgba(255,255,255,0.06); border-color: rgba(118, 185, 0, 0.3); }
+        .camera-item.alert { border-color: rgba(239, 68, 68, 0.5); background: rgba(239, 68, 68, 0.1); }
+        .camera-icon {
+            width: 32px; height: 32px; border-radius: 8px;
+            background: linear-gradient(135deg, #76b900 0%, #1a1a1a 100%);
+            display: flex; align-items: center; justify-content: center;
+            margin-right: 10px; font-size: 13px; font-weight: 600; color: white; flex-shrink: 0;
+        }
+        .camera-item.alert .camera-icon { background: linear-gradient(135deg, #ef4444 0%, #f59e0b 100%); }
+        .camera-info { flex: 1; min-width: 0; }
+        .camera-name { font-size: 13px; font-weight: 600; color: #e7e9ea; }
+        .camera-loc { font-size: 11px; color: #9ca3af; margin-top: 1px; }
+        .camera-badge {
+            font-size: 9px; padding: 3px 6px; border-radius: 4px;
+            background: rgba(118, 185, 0, 0.15); color: #76b900;
+            font-weight: 600; text-transform: uppercase; flex-shrink: 0;
+        }
+        .camera-badge.alert { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+
+        .incident-log { max-height: 180px; overflow-y: auto; margin: 0 -8px; padding: 0 8px; }
+        .incident-entry {
+            padding: 10px 12px; margin-bottom: 6px; border-radius: 8px;
+            background: rgba(255,255,255,0.02); border-left: 3px solid #6b7280;
+        }
+        .incident-entry.critical { border-color: #ef4444; background: rgba(239, 68, 68, 0.05); }
+        .incident-entry.warning { border-color: #f59e0b; background: rgba(245, 158, 11, 0.05); }
+        .incident-entry.info { border-color: #76b900; background: rgba(118, 185, 0, 0.05); }
+        .incident-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+        .incident-type { font-weight: 600; font-size: 11px; text-transform: uppercase; }
+        .incident-type.critical { color: #ef4444; }
+        .incident-type.warning { color: #f59e0b; }
+        .incident-type.info { color: #76b900; }
+        .incident-time { color: #6b7280; font-size: 11px; }
+        .incident-desc { color: #6b7280; font-size: 11px; }
+
+        .nvidia-badge {
+            background: linear-gradient(135deg, #76b900 0%, #1a1a1a 100%);
+            color: white; padding: 4px 10px; border-radius: 6px;
+            font-size: 10px; font-weight: 600;
+        }
+
+        .mapboxgl-popup-content {
+            background: rgba(26, 31, 38, 0.95);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 12px;
+            color: #e7e9ea;
+            font-family: inherit;
+        }
+        .mapboxgl-popup-tip { border-top-color: rgba(26, 31, 38, 0.95); }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <div class="logo-icon">NV</div>
+            <h1>Nimverse Monitor</h1>
+        </div>
+        <div class="header-nav">
+            <a href="index.html" class="nav-btn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+                </svg>
+                Cameras
+            </a>
+            <a href="map.html" class="nav-btn active">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/>
+                </svg>
+                Map View
+            </a>
+            <a href="demo.html" class="nav-btn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/>
+                </svg>
+                Live Demo
+            </a>
+        </div>
+        <div class="header-right">
+            <span class="nvidia-badge">NVIDIA NIM</span>
+            <span id="datetime"></span>
+            <div class="status-indicator">
+                <div class="status-dot"></div>
+                <span class="status-text">System Active</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div id="map"></div>
+
+        <div class="sidebar">
+            <div class="sidebar-section">
+                <h3>Overview</h3>
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-val green" id="statCams">9</div>
+                        <div class="stat-lbl">Cameras</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-val amber" id="statAlerts">0</div>
+                        <div class="stat-lbl">Alerts</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-val green" id="statPeople">0</div>
+                        <div class="stat-lbl">People</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3>Camera Locations</h3>
+                <div class="camera-list" id="cameraList"></div>
+            </div>
+
+            <div class="sidebar-section" style="flex:1;">
+                <h3>Recent Incidents</h3>
+                <div class="incident-log" id="incidentLog">
+                    <div class="incident-entry info">
+                        <div class="incident-header">
+                            <span class="incident-type info">SYSTEM</span>
+                            <span class="incident-time">--:--</span>
+                        </div>
+                        <div class="incident-desc">Monitoring active</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const CAMERAS = [
+            { id: 'CAM-01', name: 'Camera 01', lat: 37.7838, lng: -122.4167, address: '455 Golden Gate Ave' },
+            { id: 'CAM-02', name: 'Camera 02', lat: 37.7749, lng: -122.4194, address: 'Market St & 5th St' },
+            { id: 'CAM-03', name: 'Camera 03', lat: 37.7652, lng: -122.4194, address: '16th St & Mission' },
+            { id: 'CAM-04', name: 'Camera 04', lat: 37.7879, lng: -122.4074, address: 'Union Square' },
+            { id: 'CAM-05', name: 'Camera 05', lat: 37.7855, lng: -122.4089, address: 'Powell St Station' },
+            { id: 'CAM-06', name: 'Camera 06', lat: 37.7831, lng: -122.4181, address: 'Civic Center Plaza' },
+            { id: 'CAM-07', name: 'Camera 07', lat: 37.7786, lng: -122.4122, address: '6th St & Market' },
+            { id: 'CAM-08', name: 'Camera 08', lat: 37.7699, lng: -122.4285, address: 'Castro & Market' },
+            { id: 'CAM-09', name: 'Camera 09', lat: 37.7941, lng: -122.3950, address: 'Embarcadero Plaza' }
+        ];
+
+        let map;
+
+        function init() {
+            updateTime();
+            setInterval(updateTime, 1000);
+
+            mapboxgl.accessToken = 'pk.eyJ1IjoibmltdmVyc2UiLCJhIjoiY200cTJnNnpmMG5ldzJyczd4bjd3cjdmZCJ9.IYSWGwBbT-jHOxH2Bj2yEw';
+
+            map = new mapboxgl.Map({
+                container: 'map',
+                style: 'mapbox://styles/mapbox/dark-v11',
+                center: [-122.4194, 37.7749],
+                zoom: 13
+            });
+
+            map.on('load', () => {
+                addCameraMarkers();
+                buildCameraList();
+            });
+        }
+
+        function updateTime() {
+            document.getElementById('datetime').textContent = new Date().toLocaleString();
+        }
+
+        function addCameraMarkers() {
+            CAMERAS.forEach(cam => {
+                const el = document.createElement('div');
+                el.className = 'camera-marker';
+                el.style.cssText = `
+                    width: 32px; height: 32px;
+                    background: linear-gradient(135deg, #76b900 0%, #1a1a1a 100%);
+                    border-radius: 50%;
+                    border: 3px solid #76b900;
+                    cursor: pointer;
+                    display: flex; align-items: center; justify-content: center;
+                    color: white; font-size: 10px; font-weight: bold;
+                    box-shadow: 0 0 20px rgba(118, 185, 0, 0.5);
+                `;
+                el.textContent = cam.id.replace('CAM-', '');
+
+                const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
+                    <div style="font-size:14px;font-weight:600;margin-bottom:4px;">${cam.id}</div>
+                    <div style="font-size:12px;color:#9ca3af;">${cam.address}</div>
+                    <div style="font-size:11px;color:#76b900;margin-top:4px;">Status: Active</div>
+                `);
+
+                new mapboxgl.Marker(el)
+                    .setLngLat([cam.lng, cam.lat])
+                    .setPopup(popup)
+                    .addTo(map);
+            });
+        }
+
+        function buildCameraList() {
+            const list = document.getElementById('cameraList');
+            list.innerHTML = '';
+
+            CAMERAS.forEach(cam => {
+                const item = document.createElement('div');
+                item.className = 'camera-item';
+                item.innerHTML = `
+                    <div class="camera-icon">${cam.id.replace('CAM-', '')}</div>
+                    <div class="camera-info">
+                        <div class="camera-name">${cam.id}</div>
+                        <div class="camera-loc">${cam.address}</div>
+                    </div>
+                    <span class="camera-badge">ACTIVE</span>
+                `;
+                item.onclick = () => {
+                    map.flyTo({ center: [cam.lng, cam.lat], zoom: 16 });
+                };
+                list.appendChild(item);
+            });
+        }
+
+        function addIncident(type, message) {
+            const log = document.getElementById('incidentLog');
+            const time = new Date().toTimeString().slice(0, 5);
+            const typeClass = type === 'FIGHT' ? 'critical' : type === 'FALL' ? 'warning' : 'info';
+
+            const entry = document.createElement('div');
+            entry.className = 'incident-entry ' + typeClass;
+            entry.innerHTML = `
+                <div class="incident-header">
+                    <span class="incident-type ${typeClass}">${type}</span>
+                    <span class="incident-time">${time}</span>
+                </div>
+                <div class="incident-desc">${message}</div>
+            `;
+            log.insertBefore(entry, log.firstChild);
+
+            const alertCount = parseInt(document.getElementById('statAlerts').textContent) + 1;
+            document.getElementById('statAlerts').textContent = alertCount;
+        }
+
+        init();
+    </script>
+</body>
+</html>

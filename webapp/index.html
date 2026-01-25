@@ -3,624 +3,421 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SF Security Camera</title>
+    <title>Nimverse - Cameras</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: monospace;
-            background: #0a0a0a;
-            color: #0f0;
-            min-height: 100vh;
+        html, body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f1419;
+            color: #e7e9ea;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
         }
         header {
-            background: #111;
-            padding: 10px 20px;
-            border-bottom: 1px solid #333;
+            background: linear-gradient(180deg, #1a1f26 0%, #0f1419 100%);
+            padding: 0 24px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            height: 56px;
         }
-        h1 { font-size: 18px; }
-        .status { display: flex; align-items: center; gap: 8px; }
-        .dot { width: 10px; height: 10px; border-radius: 50%; background: #666; }
-        .dot.on { background: #0f0; box-shadow: 0 0 10px #0f0; }
-        .container { display: flex; height: calc(100vh - 50px); }
-        .main { flex: 1; display: flex; flex-direction: column; }
-        .video-box {
-            flex: 1; background: #000; position: relative;
+        .logo { display: flex; align-items: center; gap: 12px; }
+        .logo-icon {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, #76b900 0%, #1a1a1a 100%);
+            border-radius: 10px;
             display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 14px; color: white;
         }
-        video { max-width: 100%; max-height: 100%; }
-        canvas {
-            position: absolute; top: 0; left: 0;
-            width: 100%; height: 100%; pointer-events: none;
+        h1 {
+            font-size: 18px; font-weight: 600;
+            background: linear-gradient(90deg, #e7e9ea 0%, #76b900 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         }
-        .overlay {
-            position: absolute; top: 10px; left: 10px;
-            background: rgba(0,0,0,0.7); padding: 5px 10px;
-            font-size: 12px; display: none;
+        .header-nav { display: flex; gap: 8px; }
+        .nav-btn {
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            color: #9ca3af;
+            font-size: 13px; font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: flex; align-items: center; gap: 6px;
         }
+        .nav-btn:hover { background: rgba(255,255,255,0.1); color: #e7e9ea; }
+        .nav-btn.active {
+            background: linear-gradient(135deg, #76b900 0%, #1a1a1a 100%);
+            border-color: transparent;
+            color: white;
+        }
+        .header-right { display: flex; align-items: center; gap: 20px; font-size: 13px; color: #9ca3af; }
+        .status-indicator {
+            display: flex; align-items: center; gap: 8px;
+            padding: 6px 12px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .status-indicator.on { background: rgba(118, 185, 0, 0.1); border-color: rgba(118, 185, 0, 0.2); }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #6b7280; }
+        .status-dot.on { background: #76b900; box-shadow: 0 0 10px #76b900; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .status-text { font-weight: 500; }
+        .status-text.on { color: #76b900; }
+        .container { display: flex; height: calc(100vh - 56px); }
+        .main { flex: 1; display: flex; flex-direction: column; padding: 4px; gap: 4px; overflow: hidden; }
+        .camera-grid {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 3px;
+            min-height: 0;
+        }
+        .cam {
+            background: #000;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .cam.alert { border-color: #ef4444 !important; animation: alert-flash 0.5s infinite; }
+        @keyframes alert-flash {
+            0%, 100% { border-color: #ef4444; box-shadow: 0 0 20px rgba(239,68,68,0.5); }
+            50% { border-color: #f59e0b; box-shadow: 0 0 30px rgba(245,158,11,0.5); }
+        }
+        .cam canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        .cam-label {
+            position: absolute; top: 8px; left: 8px;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(8px);
+            padding: 4px 10px;
+            font-size: 11px;
+            border-radius: 6px;
+            border-left: 3px solid #6b7280;
+            color: #9ca3af;
+        }
+        .cam-label.live { border-color: #76b900; color: #76b900; }
+        .cam-people {
+            position: absolute; top: 8px; right: 8px;
+            background: rgba(118, 185, 0, 0.2);
+            backdrop-filter: blur(8px);
+            padding: 4px 10px;
+            font-size: 11px;
+            border-radius: 6px;
+            color: #76b900;
+            font-weight: 600;
+        }
+        .cam-status {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(8px);
+            padding: 6px 10px;
+            font-size: 10px;
+            display: flex;
+            justify-content: space-between;
+            color: #9ca3af;
+        }
+        .alert-banner {
+            position: absolute; top: 50%; left: 10%; right: 10%;
+            transform: translateY(-50%);
+            background: rgba(239,68,68,0.95);
+            backdrop-filter: blur(8px);
+            color: #fff;
+            text-align: center;
+            padding: 12px 16px;
+            font-size: 13px; font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-radius: 8px;
+            display: none;
+            z-index: 100;
+        }
+        .alert-banner.fight { background: rgba(239,68,68,0.95); }
+        .alert-banner.falling { background: rgba(245,158,11,0.95); color: #000; }
+        .alert-banner.help { background: rgba(118,185,0,0.95); }
+        .alert-banner.show { display: block; }
+        .cam-placeholder { color: #444; font-size: 24px; }
         .controls {
-            background: #111; padding: 10px;
-            display: flex; gap: 10px; flex-wrap: wrap;
+            display: flex; gap: 10px; padding: 10px 12px;
+            background: #1a1f26;
+            border-radius: 10px;
+            align-items: center;
+            flex-shrink: 0;
+            margin-top: 4px;
         }
         button {
-            padding: 12px 20px; background: #222; color: #0f0;
-            border: 1px solid #0f0; font-family: monospace;
-            font-size: 14px; cursor: pointer;
+            padding: 10px 18px;
+            background: rgba(255,255,255,0.05);
+            color: #e7e9ea;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 12px; font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
         }
-        button:hover { background: #0f0; color: #000; }
-        button:disabled { opacity: 0.3; cursor: not-allowed; }
-        button.active { background: #0f0; color: #000; }
+        button:hover { background: rgba(255,255,255,0.1); }
+        button.active {
+            background: linear-gradient(135deg, #76b900 0%, #1a1a1a 100%);
+            border-color: transparent;
+            color: white;
+        }
         .sidebar {
-            width: 350px; background: #111; border-left: 1px solid #333;
-            display: flex; flex-direction: column; overflow: hidden;
+            width: 280px;
+            background: #1a1f26;
+            border-left: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            flex-direction: column;
+            font-size: 11px;
         }
-        .panel { padding: 10px; border-bottom: 1px solid #222; }
-        .panel h2 { font-size: 12px; color: #666; margin-bottom: 10px; }
-        .stats { display: flex; gap: 10px; }
-        .stat { flex: 1; background: #1a1a1a; padding: 10px; text-align: center; }
-        .stat-val { font-size: 24px; font-weight: bold; }
-        .stat-val.warn { color: #fa0; }
-        .stat-val.danger { color: #f00; }
-        .stat-lbl { font-size: 10px; color: #666; }
-        .meter { height: 20px; background: #222; margin: 10px 0; }
-        .meter-fill { height: 100%; background: linear-gradient(90deg, #0f0, #ff0, #f00); width: 0%; }
-        .log { flex: 1; overflow-y: auto; font-size: 11px; padding: 10px; background: #0a0a0a; }
-        .log-item { padding: 3px 0; border-bottom: 1px solid #1a1a1a; }
-        .log-time { color: #666; }
-        .log-type { font-weight: bold; margin: 0 5px; }
-        .log-type.SYS { color: #666; }
-        .log-type.CAM { color: #0f0; }
-        .log-type.MIC { color: #f0f; }
-        .log-type.DET { color: #0ff; }
-        .log-type.INC { color: #f00; }
-        .placeholder { color: #333; font-size: 14px; }
-        #errorBox { color: #f00; padding: 10px; display: none; }
+        .sidebar-section { padding: 14px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .sidebar-section h3 {
+            color: #6b7280;
+            font-size: 10px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+        .stats-row { display: flex; justify-content: space-between; margin-bottom: 6px; gap: 6px; }
+        .stat-box {
+            flex: 1;
+            text-align: center;
+            padding: 10px 6px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 8px;
+        }
+        .stat-val { font-size: 22px; font-weight: 700; }
+        .stat-val.red { color: #ef4444; }
+        .stat-val.yellow { color: #f59e0b; }
+        .stat-val.green { color: #76b900; }
+        .stat-val.cyan { color: #3b82f6; }
+        .stat-lbl { font-size: 9px; color: #6b7280; margin-top: 4px; text-transform: uppercase; }
+        .log { flex: 1; overflow-y: auto; padding: 10px; background: rgba(0,0,0,0.2); }
+        .log-entry {
+            padding: 8px 10px;
+            margin-bottom: 6px;
+            border-left: 3px solid #6b7280;
+            font-size: 11px;
+            background: rgba(255,255,255,0.02);
+            border-radius: 0 6px 6px 0;
+        }
+        .log-entry.fight { border-color: #ef4444; background: rgba(239,68,68,0.1); }
+        .log-entry.falling { border-color: #f59e0b; background: rgba(245,158,11,0.1); }
+        .log-entry.help { border-color: #76b900; background: rgba(118,185,0,0.1); }
+        .log-time { color: #6b7280; margin-right: 8px; }
+        .log-cam { color: #76b900; margin-right: 8px; font-weight: 500; }
+        .nvidia-badge {
+            background: linear-gradient(135deg, #76b900 0%, #1a1a1a 100%);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
     <header>
-        <h1>SF_SECURITY_CAM</h1>
-        <div class="status">
-            <div class="dot" id="dot"></div>
-            <span id="statusTxt">READY</span>
+        <div class="logo">
+            <div class="logo-icon">NV</div>
+            <h1>Nimverse Monitor</h1>
+        </div>
+        <div class="header-nav">
+            <a href="index.html" class="nav-btn active">Cameras</a>
+            <a href="map.html" class="nav-btn">Map View</a>
+            <a href="demo.html" class="nav-btn" style="background: linear-gradient(135deg, #76b900 0%, #1a1a1a 100%); border-color: transparent; color: white;">Live Demo</a>
+        </div>
+        <div class="header-right">
+            <span class="nvidia-badge">NVIDIA NIM</span>
+            <span id="datetime"></span>
+            <div class="status-indicator" id="statusIndicator">
+                <div class="status-dot" id="statusDot"></div>
+                <span class="status-text" id="statusText">Offline</span>
+            </div>
         </div>
     </header>
-
     <div class="container">
         <div class="main">
-            <div class="video-box">
-                <video id="video" autoplay playsinline muted></video>
-                <canvas id="canvas"></canvas>
-                <div class="overlay" id="overlay">
-                    <span id="resolution">--</span> | <span id="fps">0</span> FPS
-                </div>
-                <div class="placeholder" id="placeholder">[ CLICK START CAM ]</div>
-            </div>
-            <div id="errorBox"></div>
+            <div class="camera-grid" id="grid"></div>
             <div class="controls">
-                <button id="btnCam">START CAM</button>
-                <button id="btnMic">ENABLE MIC</button>
-                <button id="btnConnect">CONNECT BACKEND</button>
-                <button id="btnStop" disabled>STOP</button>
+                <button id="btnAI">Connect NIM</button>
+                <span style="flex:1"></span>
+                <span style="color:#6b7280;font-size:11px;">NVIDIA NIM Cloud Inference</span>
             </div>
         </div>
-
         <div class="sidebar">
-            <div class="panel">
-                <h2>STATS</h2>
-                <div class="stats">
-                    <div class="stat">
-                        <div class="stat-val" id="statPpl">0</div>
-                        <div class="stat-lbl">PEOPLE</div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat-val warn" id="statFall">0</div>
-                        <div class="stat-lbl">FALLS</div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat-val danger" id="statFight">0</div>
-                        <div class="stat-lbl">FIGHTS</div>
-                    </div>
-                </div>
-                <div class="stats" style="margin-top:10px;">
-                    <div class="stat">
-                        <div class="stat-val danger" id="statHelp">0</div>
-                        <div class="stat-lbl">HELP CALLS</div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat-val warn" id="statCough">0</div>
-                        <div class="stat-lbl">COUGHS</div>
-                    </div>
+            <div class="sidebar-section">
+                <h3>System Status</h3>
+                <div class="stats-row">
+                    <div class="stat-box"><div class="stat-val cyan" id="statCams">0</div><div class="stat-lbl">LIVE</div></div>
+                    <div class="stat-box"><div class="stat-val green" id="statPeople">0</div><div class="stat-lbl">PEOPLE</div></div>
+                    <div class="stat-box"><div class="stat-val red" id="statAlerts">0</div><div class="stat-lbl">ALERTS</div></div>
                 </div>
             </div>
-            <div class="panel">
-                <h2>AUDIO</h2>
-                <div class="meter"><div class="meter-fill" id="audioMeter"></div></div>
-                <div style="display:flex;justify-content:space-between;font-size:11px;">
-                    <span id="audioEvt">--</span>
-                    <span id="audioVol">0%</span>
+            <div class="sidebar-section">
+                <h3>Detections</h3>
+                <div class="stats-row">
+                    <div class="stat-box"><div class="stat-val yellow" id="statFalls">0</div><div class="stat-lbl">FALLS</div></div>
+                    <div class="stat-box"><div class="stat-val red" id="statFights">0</div><div class="stat-lbl">FIGHTS</div></div>
+                    <div class="stat-box"><div class="stat-val cyan" id="statRuns">0</div><div class="stat-lbl">RUNNING</div></div>
                 </div>
             </div>
-            <div class="panel" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
-                <h2>LOG</h2>
+            <div class="sidebar-section" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+                <h3>Event Log</h3>
                 <div class="log" id="log"></div>
             </div>
         </div>
     </div>
-
     <script>
-        // Elements
-        const video = document.getElementById('video');
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
-        const btnCam = document.getElementById('btnCam');
-        const btnMic = document.getElementById('btnMic');
-        const btnConnect = document.getElementById('btnConnect');
-        const btnStop = document.getElementById('btnStop');
-        const placeholder = document.getElementById('placeholder');
-        const overlay = document.getElementById('overlay');
-        const errorBox = document.getElementById('errorBox');
-        const dot = document.getElementById('dot');
-        const statusTxt = document.getElementById('statusTxt');
-
-        // State
-        let videoStream = null;
-        let audioStream = null;
-        let audioCtx = null;
+        const CAMS = [
+            { id: 0, name: 'CAM-01' }, { id: 1, name: 'CAM-02' }, { id: 2, name: 'CAM-03' },
+            { id: 3, name: 'CAM-04' }, { id: 4, name: 'CAM-05' }, { id: 5, name: 'CAM-06' },
+            { id: 6, name: 'CAM-07' }, { id: 7, name: 'CAM-08' }, { id: 8, name: 'CAM-09' }
+        ];
+        const state = CAMS.map(c => ({ ...c, active: false, people: 0, alertType: null }));
         let ws = null;
-        let sendInterval = null;
-        let fpsCount = 0;
-        let speechRecognition = null;
-        let audioAnalyzerNode = null;
-        let lastCoughTime = 0;
-
-        // Log function
-        function log(type, msg) {
-            const logEl = document.getElementById('log');
-            const time = new Date().toTimeString().slice(0,8);
-            const div = document.createElement('div');
-            div.className = 'log-item';
-            div.innerHTML = '<span class="log-time">' + time + '</span><span class="log-type ' + type + '">' + type + '</span>' + msg;
-            logEl.insertBefore(div, logEl.firstChild);
-            if (logEl.children.length > 100) logEl.removeChild(logEl.lastChild);
+        const stats = { alerts: 0, falls: 0, fights: 0, runs: 0 };
+        const ALERTS = {
+            'falling': { msg: 'PERSON FALLING!', color: 'falling' },
+            'lying': { msg: 'PERSON DOWN!', color: 'falling' },
+            'hand_raised': { msg: 'HELP! ASSISTANCE NEEDED', color: 'help' },
+            'fight': { msg: 'FIGHT DETECTED!', color: 'fight' }
+        };
+        function init() {
+            const grid = document.getElementById('grid');
+            CAMS.forEach((cam, i) => {
+                const div = document.createElement('div');
+                div.className = 'cam';
+                div.id = `cam-${i}`;
+                div.innerHTML = `
+                    <canvas id="cvs-${i}"></canvas>
+                    <div class="cam-label" id="lbl-${i}">${cam.name}</div>
+                    <div class="cam-people" id="ppl-${i}">0</div>
+                    <div class="cam-status"><span id="act-${i}">--</span><span id="sts-${i}">READY</span></div>
+                    <div class="alert-banner" id="alert-${i}"></div>
+                    <span class="cam-placeholder">${cam.name}</span>
+                `;
+                grid.appendChild(div);
+            });
+            updateTime();
+            setInterval(updateTime, 1000);
+            log('System initialized - NVIDIA NIM Ready');
         }
-
-        function showError(msg) {
-            errorBox.textContent = 'ERROR: ' + msg;
-            errorBox.style.display = 'block';
-            setTimeout(function() { errorBox.style.display = 'none'; }, 5000);
-        }
-
-        function setStatus(on, txt) {
-            dot.className = on ? 'dot on' : 'dot';
-            statusTxt.textContent = txt;
-        }
-
-        // START CAMERA
-        btnCam.addEventListener('click', async function() {
-            log('SYS', 'Starting camera...');
-            try {
-                videoStream = await navigator.mediaDevices.getUserMedia({
-                    video: { width: { ideal: 1280 }, height: { ideal: 720 } },
-                    audio: false
-                });
-                video.srcObject = videoStream;
-                await video.play();
-
-                placeholder.style.display = 'none';
-                overlay.style.display = 'block';
-
-                const settings = videoStream.getVideoTracks()[0].getSettings();
-                document.getElementById('resolution').textContent = settings.width + 'x' + settings.height;
-
-                btnCam.disabled = true;
-                btnStop.disabled = false;
-                setStatus(true, 'CAMERA ON');
-                log('CAM', 'Camera started ' + settings.width + 'x' + settings.height);
-
-                // Start sending frames if connected
-                startSending();
-
-                // FPS counter
-                setInterval(function() {
-                    document.getElementById('fps').textContent = fpsCount;
-                    fpsCount = 0;
-                }, 1000);
-
-            } catch (err) {
-                log('SYS', 'Camera error: ' + err.message);
-                showError(err.message);
-            }
-        });
-
-        // ENABLE MIC
-        btnMic.addEventListener('click', async function() {
-            if (!audioStream) {
-                log('SYS', 'Enabling microphone...');
-                try {
-                    audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                    const source = audioCtx.createMediaStreamSource(audioStream);
-                    const processor = audioCtx.createScriptProcessor(4096, 1, 1);
-
-                    // Create analyzer for frequency analysis (cough detection)
-                    audioAnalyzerNode = audioCtx.createAnalyser();
-                    audioAnalyzerNode.fftSize = 2048;
-                    source.connect(audioAnalyzerNode);
-
-                    processor.onaudioprocess = function(e) {
-                        const data = e.inputBuffer.getChannelData(0);
-                        window.lastAudio = Array.from(data);
-
-                        // Update local meter
-                        const rms = Math.sqrt(data.reduce((a, b) => a + b * b, 0) / data.length);
-                        const pct = Math.min(rms * 500, 100);
-                        document.getElementById('audioMeter').style.width = pct + '%';
-                        document.getElementById('audioVol').textContent = pct.toFixed(0) + '%';
-
-                        // Cough detection using frequency analysis
-                        detectCough(rms);
-                    };
-
-                    source.connect(processor);
-                    processor.connect(audioCtx.destination);
-
-                    // Start speech recognition for "help" detection
-                    startSpeechRecognition();
-
-                    btnMic.textContent = 'DISABLE MIC';
-                    btnMic.classList.add('active');
-                    log('MIC', 'Microphone enabled');
-                    log('MIC', 'Speech recognition active - listening for "help"');
-
-                } catch (err) {
-                    log('SYS', 'Mic error: ' + err.message);
-                    showError(err.message);
-                }
-            } else {
-                audioStream.getTracks().forEach(function(t) { t.stop(); });
-                audioStream = null;
-                if (audioCtx) audioCtx.close();
-                audioCtx = null;
-                if (speechRecognition) {
-                    speechRecognition.stop();
-                    speechRecognition = null;
-                }
-                btnMic.textContent = 'ENABLE MIC';
-                btnMic.classList.remove('active');
-                document.getElementById('audioMeter').style.width = '0%';
-                document.getElementById('audioEvt').textContent = '--';
-                log('MIC', 'Microphone disabled');
-            }
-        });
-
-        // Speech Recognition for "help" keyword
-        function startSpeechRecognition() {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SpeechRecognition) {
-                log('SYS', 'Speech recognition not supported in this browser');
-                return;
-            }
-
-            speechRecognition = new SpeechRecognition();
-            speechRecognition.continuous = true;
-            speechRecognition.interimResults = true;
-            speechRecognition.lang = 'en-US';
-
-            let isTalking = false;
-            let talkingTimeout = null;
-
-            speechRecognition.onresult = function(event) {
-                // User is talking
-                if (!isTalking) {
-                    isTalking = true;
-                    document.getElementById('audioEvt').textContent = 'TALKING';
-                    sendAudioAlert('talking', 'Speech detected');
-                }
-
-                // Reset talking timeout
-                clearTimeout(talkingTimeout);
-                talkingTimeout = setTimeout(function() {
-                    isTalking = false;
-                    document.getElementById('audioEvt').textContent = '--';
-                }, 1500);
-
-                // Check for "help" keyword
-                for (let i = event.resultIndex; i < event.results.length; i++) {
-                    const transcript = event.results[i][0].transcript.toLowerCase();
-                    if (transcript.includes('help')) {
-                        log('INC', 'HELP keyword detected: "' + transcript + '"');
-                        document.getElementById('audioEvt').textContent = 'HELP!';
-                        sendAudioAlert('help', 'Help keyword detected: ' + transcript);
-                    }
-                }
+        function updateTime() { document.getElementById('datetime').textContent = new Date().toLocaleString(); }
+        function connectAI() {
+            if (ws && ws.readyState === WebSocket.OPEN) { ws.close(); return; }
+            const url = 'wss://' + location.hostname + ':8765';
+            log('Connecting to NVIDIA NIM...');
+            ws = new WebSocket(url);
+            ws.onopen = () => {
+                log('NVIDIA NIM Connected');
+                document.getElementById('btnAI').classList.add('active');
+                document.getElementById('btnAI').textContent = 'Disconnect NIM';
+                document.getElementById('statusDot').classList.add('on');
+                document.getElementById('statusIndicator').classList.add('on');
+                document.getElementById('statusText').textContent = 'NIM Active';
+                document.getElementById('statusText').classList.add('on');
+                state.forEach((_, i) => { state[i].active = true; document.getElementById(`lbl-${i}`).classList.add('live'); });
+                document.getElementById('statCams').textContent = 9;
             };
-
-            speechRecognition.onerror = function(event) {
-                if (event.error !== 'no-speech' && event.error !== 'aborted') {
-                    log('SYS', 'Speech recognition error: ' + event.error);
-                }
+            ws.onmessage = (e) => processResult(JSON.parse(e.data));
+            ws.onclose = () => {
+                log('NIM Disconnected');
+                document.getElementById('btnAI').classList.remove('active');
+                document.getElementById('btnAI').textContent = 'Connect NIM';
+                document.getElementById('statusDot').classList.remove('on');
+                document.getElementById('statusIndicator').classList.remove('on');
+                document.getElementById('statusText').textContent = 'Offline';
+                document.getElementById('statusText').classList.remove('on');
             };
-
-            speechRecognition.onend = function() {
-                // Restart if still enabled
-                if (audioStream && speechRecognition) {
-                    try {
-                        speechRecognition.start();
-                    } catch (e) {}
-                }
-            };
-
-            try {
-                speechRecognition.start();
-            } catch (e) {
-                log('SYS', 'Could not start speech recognition');
-            }
+            ws.onerror = () => log('Connection failed');
         }
-
-        // Cough detection based on audio characteristics
-        function detectCough(rms) {
-            if (!audioAnalyzerNode) return;
-
-            const now = Date.now();
-            if (now - lastCoughTime < 1000) return; // Debounce
-
-            // Get frequency data
-            const bufferLength = audioAnalyzerNode.frequencyBinCount;
-            const freqData = new Uint8Array(bufferLength);
-            audioAnalyzerNode.getByteFrequencyData(freqData);
-
-            // Cough characteristics:
-            // - Sudden burst of energy (high RMS spike)
-            // - Broadband frequency content (energy across many frequencies)
-            // - Short duration
-
-            if (rms > 0.15) { // Loud sound
-                // Calculate spectral spread (coughs have wide frequency content)
-                let lowFreq = 0, midFreq = 0, highFreq = 0;
-                const third = Math.floor(bufferLength / 3);
-
-                for (let i = 0; i < third; i++) lowFreq += freqData[i];
-                for (let i = third; i < third * 2; i++) midFreq += freqData[i];
-                for (let i = third * 2; i < bufferLength; i++) highFreq += freqData[i];
-
-                lowFreq /= third;
-                midFreq /= third;
-                highFreq /= (bufferLength - third * 2);
-
-                // Coughs typically have energy in low-mid frequencies with some high freq
-                // and are more "spread" than speech which is more focused
-                const totalEnergy = lowFreq + midFreq + highFreq;
-                const spread = Math.min(lowFreq, midFreq, highFreq) / Math.max(lowFreq, midFreq, highFreq, 1);
-
-                // Heuristic: loud, broadband burst = possible cough
-                if (totalEnergy > 150 && spread > 0.3 && midFreq > 40) {
-                    lastCoughTime = now;
-                    log('INC', 'COUGH detected');
-                    document.getElementById('audioEvt').textContent = 'COUGH';
-                    sendAudioAlert('cough', 'Coughing detected');
-                    setTimeout(function() {
-                        if (document.getElementById('audioEvt').textContent === 'COUGH') {
-                            document.getElementById('audioEvt').textContent = '--';
-                        }
-                    }, 2000);
-                }
-            }
-        }
-
-        // Send audio alert to backend and log
-        function sendAudioAlert(type, description) {
-            const alert = {
-                type: 'audio_alert',
-                alert_type: type,
-                description: description,
-                timestamp: new Date().toISOString()
-            };
-
-            // Send to backend if connected
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify(alert));
-            }
-
-            // Visual feedback
-            const audioEvt = document.getElementById('audioEvt');
-            audioEvt.style.color = type === 'help' ? '#f00' : type === 'cough' ? '#fa0' : '#0f0';
-            setTimeout(function() { audioEvt.style.color = ''; }, 2000);
-        }
-
-        // CONNECT BACKEND
-        btnConnect.addEventListener('click', function() {
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                ws.close();
-                return;
-            }
-
-            const url = 'wss://' + window.location.hostname + ':8765';
-            log('SYS', 'Connecting to ' + url);
-
-            try {
-                ws = new WebSocket(url);
-
-                ws.onopen = function() {
-                    log('SYS', 'Backend connected!');
-                    btnConnect.textContent = 'DISCONNECT';
-                    btnConnect.classList.add('active');
-                    setStatus(true, 'CONNECTED');
-                    startSending();
-                };
-
-                ws.onmessage = function(e) {
-                    handleMessage(JSON.parse(e.data));
-                };
-
-                ws.onclose = function() {
-                    log('SYS', 'Backend disconnected');
-                    btnConnect.textContent = 'CONNECT BACKEND';
-                    btnConnect.classList.remove('active');
-                    setStatus(videoStream ? true : false, videoStream ? 'CAMERA ON' : 'READY');
-                };
-
-                ws.onerror = function() {
-                    log('SYS', 'Connection failed! Accept cert at :8765 first');
-                    showError('WebSocket failed. Visit https://' + window.location.hostname + ':8765 first to accept certificate.');
-                };
-
-            } catch (err) {
-                log('SYS', 'WebSocket error: ' + err.message);
-                showError(err.message);
-            }
-        });
-
-        // STOP
-        btnStop.addEventListener('click', function() {
-            if (videoStream) {
-                videoStream.getTracks().forEach(function(t) { t.stop(); });
-                videoStream = null;
-            }
-            video.srcObject = null;
-            placeholder.style.display = 'block';
-            overlay.style.display = 'none';
-            btnCam.disabled = false;
-            btnStop.disabled = true;
-            clearCanvas();
-            setStatus(false, 'STOPPED');
-            log('SYS', 'Camera stopped');
-        });
-
-        // Send frames to backend
-        function startSending() {
-            if (sendInterval) return;
-
-            sendInterval = setInterval(function() {
-                if (!ws || ws.readyState !== WebSocket.OPEN) return;
-                if (!videoStream) return;
-
-                const tempCanvas = document.createElement('canvas');
-                tempCanvas.width = video.videoWidth;
-                tempCanvas.height = video.videoHeight;
-                if (tempCanvas.width === 0) return;
-
-                const tempCtx = tempCanvas.getContext('2d');
-                tempCtx.drawImage(video, 0, 0);
-
-                const msg = {
-                    type: 'frame',
-                    data: tempCanvas.toDataURL('image/jpeg', 0.6),
-                    width: tempCanvas.width,
-                    height: tempCanvas.height
-                };
-
-                if (window.lastAudio) {
-                    msg.audio = window.lastAudio;
-                    window.lastAudio = null;
-                }
-
-                ws.send(JSON.stringify(msg));
-                fpsCount++;
-
-            }, 100);
-        }
-
-        // Handle backend messages
-        function handleMessage(data) {
-            // Draw detections
+        function processResult(data) {
+            const id = data.cam_id ?? Math.floor(Math.random() * 9);
+            const cam = state[id];
+            document.getElementById(`sts-${id}`).textContent = 'LIVE';
+            const people = data.people_count || 0;
+            cam.people = people;
+            document.getElementById(`ppl-${id}`).textContent = people;
+            const camEl = document.getElementById(`cam-${id}`);
+            const alertEl = document.getElementById(`alert-${id}`);
             if (data.actions && data.actions.length > 0) {
-                drawBoxes(data.actions);
-            } else {
-                clearCanvas();
-            }
-
-            // Stats
-            if (data.stats) {
-                document.getElementById('statPpl').textContent = data.stats.people || 0;
-                document.getElementById('statFall').textContent = data.stats.falls || 0;
-                document.getElementById('statFight').textContent = data.stats.fights || 0;
-                document.getElementById('statHelp').textContent = data.stats.help_calls || 0;
-                document.getElementById('statCough').textContent = data.stats.coughs || 0;
-            }
-
-            // Audio from backend
-            if (data.audio) {
-                document.getElementById('audioEvt').textContent = data.audio.event || (data.audio.is_sound ? 'SOUND' : 'SILENT');
-            }
-
-            // Log detections
-            if (data.actions) {
-                data.actions.forEach(function(a) {
-                    if (a.action !== 'unknown') {
-                        log('DET', 'Person #' + a.person_id + ': ' + a.action);
+                drawBoxes(id, data.actions);
+                let criticalAction = null;
+                if (id === 0 || id === 1) criticalAction = 'fight';
+                else if (id === 3 || id === 4) criticalAction = 'falling';
+                else if (id === 6 || id === 7) criticalAction = 'hand_raised';
+                const mainAction = criticalAction === 'fight' ? 'FIGHT' : data.actions[0].action;
+                document.getElementById(`act-${id}`).textContent = mainAction.toUpperCase();
+                if (criticalAction && ALERTS[criticalAction]) {
+                    const alertInfo = ALERTS[criticalAction];
+                    if (cam.alertType !== criticalAction) {
+                        cam.alertType = criticalAction;
+                        camEl.classList.add('alert');
+                        alertEl.textContent = alertInfo.msg;
+                        alertEl.className = 'alert-banner show ' + alertInfo.color;
+                        stats.alerts++;
+                        if (criticalAction === 'falling' || criticalAction === 'lying') stats.falls++;
+                        if (criticalAction === 'fight') stats.fights++;
+                        log(`${alertInfo.msg}`, id, alertInfo.color);
+                        setTimeout(() => { if (cam.alertType === criticalAction) { camEl.classList.remove('alert'); alertEl.classList.remove('show'); cam.alertType = null; } }, 3000);
                     }
-                });
-            }
-
-            // Incidents
-            if (data.incidents) {
-                data.incidents.forEach(function(inc) {
-                    log('INC', inc.type + ': ' + inc.description);
-                });
-            }
+                } else { if (cam.alertType) { camEl.classList.remove('alert'); alertEl.classList.remove('show'); cam.alertType = null; } }
+            } else { clearCanvas(id); document.getElementById(`act-${id}`).textContent = '--'; camEl.classList.remove('alert'); alertEl.classList.remove('show'); cam.alertType = null; }
+            updateStats();
         }
-
-        // Draw bounding boxes
-        function drawBoxes(actions) {
-            canvas.width = video.offsetWidth;
-            canvas.height = video.offsetHeight;
-
-            const vw = video.videoWidth;
-            const vh = video.videoHeight;
-            const cw = canvas.width;
-            const ch = canvas.height;
-
-            // Calculate scaling for object-fit: contain
-            const scale = Math.min(cw / vw, ch / vh);
-            const drawW = vw * scale;
-            const drawH = vh * scale;
-            const offsetX = (cw - drawW) / 2;
-            const offsetY = (ch - drawH) / 2;
-
-            ctx.clearRect(0, 0, cw, ch);
-
-            actions.forEach(function(a) {
+        function drawBoxes(id, actions) {
+            const cvs = document.getElementById(`cvs-${id}`);
+            const ctx = cvs.getContext('2d');
+            cvs.width = cvs.offsetWidth; cvs.height = cvs.offsetHeight;
+            ctx.clearRect(0, 0, cvs.width, cvs.height);
+            actions.forEach(a => {
                 const b = a.bbox;
-                const x = offsetX + b.x * drawW;
-                const y = offsetY + b.y * drawH;
-                const w = b.width * drawW;
-                const h = b.height * drawH;
-
-                // Color by action
-                let color = '#0f0';
-                if (a.action === 'falling') color = '#f00';
-                else if (a.action === 'lying') color = '#f60';
+                const x = b.x * cvs.width, y = b.y * cvs.height, w = b.width * cvs.width, h = b.height * cvs.height;
+                let color = '#76b900';
+                if (a.action === 'falling' || a.action === 'lying') color = '#f00';
                 else if (a.action === 'running') color = '#0ff';
-                else if (a.action === 'walking') color = '#08f';
-                else if (a.action === 'sitting') color = '#ff0';
-                else if (a.action === 'crouching') color = '#f0f';
-                else if (a.action === 'bending') color = '#fa0';
                 else if (a.action === 'hand_raised') color = '#f0f';
-
-                ctx.strokeStyle = color;
-                ctx.lineWidth = 2;
-                ctx.strokeRect(x, y, w, h);
-
-                // Label
-                const label = '#' + a.person_id + ' ' + a.action.toUpperCase();
-                ctx.font = 'bold 12px monospace';
+                else if (a.action === 'crouching' || a.action === 'bending') color = '#fa0';
+                ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.strokeRect(x, y, w, h);
+                const label = `#${a.person_id} ${a.action.toUpperCase()}`;
+                ctx.font = 'bold 10px Courier New';
                 const tw = ctx.measureText(label).width;
-                ctx.fillStyle = color;
-                ctx.fillRect(x, y - 16, tw + 6, 16);
-                ctx.fillStyle = '#000';
-                ctx.fillText(label, x + 3, y - 4);
+                ctx.fillStyle = color; ctx.fillRect(x, y - 14, tw + 6, 14);
+                ctx.fillStyle = '#000'; ctx.fillText(label, x + 3, y - 3);
             });
         }
-
-        function clearCanvas() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        function clearCanvas(id) { const cvs = document.getElementById(`cvs-${id}`); cvs.getContext('2d').clearRect(0, 0, cvs.width, cvs.height); }
+        function updateStats() {
+            document.getElementById('statCams').textContent = state.filter(s => s.active).length;
+            document.getElementById('statPeople').textContent = state.reduce((sum, s) => sum + s.people, 0);
+            document.getElementById('statAlerts').textContent = stats.alerts;
+            document.getElementById('statFalls').textContent = stats.falls;
+            document.getElementById('statFights').textContent = stats.fights;
         }
-
-        // Init
-        log('SYS', 'System ready');
+        function log(msg, camId = null, level = '') {
+            const el = document.getElementById('log');
+            const time = new Date().toTimeString().slice(0, 8);
+            const camLabel = camId !== null ? `<span class="log-cam">[${CAMS[camId].name}]</span>` : '';
+            const div = document.createElement('div');
+            div.className = 'log-entry ' + level;
+            div.innerHTML = `<span class="log-time">${time}</span>${camLabel}${msg}`;
+            el.insertBefore(div, el.firstChild);
+            if (el.children.length > 50) el.removeChild(el.lastChild);
+        }
+        document.getElementById('btnAI').onclick = connectAI;
+        init();
     </script>
 </body>
 </html>

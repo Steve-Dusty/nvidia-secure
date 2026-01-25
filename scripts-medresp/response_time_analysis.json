@@ -1,0 +1,386 @@
+{
+  "overall": {
+    "mean": 7.08,
+    "median": 5.45,
+    "p90": 13.92
+  },
+  "by_hour": {
+    "0": {
+      "mean": 6.92,
+      "median": 5.45,
+      "p90": 12.78
+    },
+    "1": {
+      "mean": 6.62,
+      "median": 5.25,
+      "p90": 12.02
+    },
+    "2": {
+      "mean": 6.7,
+      "median": 5.5,
+      "p90": 11.72
+    },
+    "3": {
+      "mean": 6.94,
+      "median": 5.75,
+      "p90": 12.03
+    },
+    "4": {
+      "mean": 7.36,
+      "median": 5.95,
+      "p90": 13.38
+    },
+    "5": {
+      "mean": 7.02,
+      "median": 5.77,
+      "p90": 12.68
+    },
+    "6": {
+      "mean": 7.0,
+      "median": 5.72,
+      "p90": 12.78
+    },
+    "7": {
+      "mean": 7.55,
+      "median": 5.93,
+      "p90": 14.28
+    },
+    "8": {
+      "mean": 7.51,
+      "median": 5.67,
+      "p90": 14.87
+    },
+    "9": {
+      "mean": 7.27,
+      "median": 5.83,
+      "p90": 14.07
+    },
+    "10": {
+      "mean": 7.22,
+      "median": 5.53,
+      "p90": 14.85
+    },
+    "11": {
+      "mean": 7.26,
+      "median": 5.63,
+      "p90": 14.48
+    },
+    "12": {
+      "mean": 7.12,
+      "median": 5.35,
+      "p90": 14.3
+    },
+    "13": {
+      "mean": 7.06,
+      "median": 5.3,
+      "p90": 14.37
+    },
+    "14": {
+      "mean": 6.97,
+      "median": 5.23,
+      "p90": 13.75
+    },
+    "15": {
+      "mean": 7.33,
+      "median": 5.57,
+      "p90": 14.55
+    },
+    "16": {
+      "mean": 7.39,
+      "median": 5.48,
+      "p90": 15.43
+    },
+    "17": {
+      "mean": 7.39,
+      "median": 5.53,
+      "p90": 15.28
+    },
+    "18": {
+      "mean": 7.19,
+      "median": 5.38,
+      "p90": 14.97
+    },
+    "19": {
+      "mean": 6.85,
+      "median": 5.2,
+      "p90": 13.62
+    },
+    "20": {
+      "mean": 6.61,
+      "median": 5.1,
+      "p90": 13.18
+    },
+    "21": {
+      "mean": 6.69,
+      "median": 5.1,
+      "p90": 13.3
+    },
+    "22": {
+      "mean": 6.79,
+      "median": 5.18,
+      "p90": 13.2
+    },
+    "23": {
+      "mean": 6.96,
+      "median": 5.28,
+      "p90": 13.55
+    }
+  },
+  "by_day": {
+    "0": {
+      "mean": 6.94,
+      "median": 5.4,
+      "p90": 13.65
+    },
+    "1": {
+      "mean": 7.05,
+      "median": 5.42,
+      "p90": 13.83
+    },
+    "2": {
+      "mean": 7.03,
+      "median": 5.35,
+      "p90": 13.93
+    },
+    "3": {
+      "mean": 7.29,
+      "median": 5.52,
+      "p90": 14.52
+    },
+    "4": {
+      "mean": 7.35,
+      "median": 5.65,
+      "p90": 14.5
+    },
+    "5": {
+      "mean": 7.1,
+      "median": 5.53,
+      "p90": 13.82
+    },
+    "6": {
+      "mean": 6.82,
+      "median": 5.28,
+      "p90": 13.33
+    }
+  },
+  "by_neighborhood": {
+    "Tenderloin": {
+      "mean": 6.72,
+      "median": 5.13,
+      "p90": 13.27
+    },
+    "Mission": {
+      "mean": 6.58,
+      "median": 4.97,
+      "p90": 13.33
+    },
+    "Bayview Hunters Point": {
+      "mean": 8.18,
+      "median": 6.33,
+      "p90": 15.7
+    },
+    "South of Market": {
+      "mean": 7.24,
+      "median": 5.6,
+      "p90": 14.08
+    },
+    "Oceanview/Merced/Ingleside": {
+      "mean": 7.27,
+      "median": 5.68,
+      "p90": 14.02
+    },
+    "Bernal Heights": {
+      "mean": 7.48,
+      "median": 5.83,
+      "p90": 14.38
+    },
+    "Outer Richmond": {
+      "mean": 7.18,
+      "median": 5.58,
+      "p90": 14.3
+    },
+    "Japantown": {
+      "mean": 6.7,
+      "median": 4.98,
+      "p90": 13.17
+    },
+    "Western Addition": {
+      "mean": 6.29,
+      "median": 4.93,
+      "p90": 12.08
+    },
+    "Excelsior": {
+      "mean": 7.77,
+      "median": 6.05,
+      "p90": 14.9
+    },
+    "Castro/Upper Market": {
+      "mean": 6.32,
+      "median": 5.03,
+      "p90": 12.12
+    },
+    "Noe Valley": {
+      "mean": 6.3,
+      "median": 5.0,
+      "p90": 12.73
+    },
+    "Lakeshore": {
+      "mean": 9.17,
+      "median": 7.52,
+      "p90": 17.02
+    },
+    "Inner Richmond": {
+      "mean": 5.95,
+      "median": 4.63,
+      "p90": 10.95
+    },
+    "Mission Bay": {
+      "mean": 7.86,
+      "median": 5.95,
+      "p90": 16.1
+    },
+    "Visitacion Valley": {
+      "mean": 9.05,
+      "median": 7.48,
+      "p90": 15.8
+    },
+    "Pacific Heights": {
+      "mean": 6.11,
+      "median": 4.65,
+      "p90": 11.28
+    },
+    "Financial District/South Beach": {
+      "mean": 7.62,
+      "median": 5.73,
+      "p90": 15.02
+    },
+    "Golden Gate Park": {
+      "mean": 6.71,
+      "median": 5.28,
+      "p90": 12.35
+    },
+    "Sunset/Parkside": {
+      "mean": 7.91,
+      "median": 6.12,
+      "p90": 15.48
+    },
+    "Glen Park": {
+      "mean": 7.8,
+      "median": 6.5,
+      "p90": 14.37
+    },
+    "Haight Ashbury": {
+      "mean": 6.56,
+      "median": 5.28,
+      "p90": 12.68
+    },
+    "Marina": {
+      "mean": 6.96,
+      "median": 5.4,
+      "p90": 13.92
+    },
+    "West of Twin Peaks": {
+      "mean": 7.31,
+      "median": 5.83,
+      "p90": 13.42
+    },
+    "Inner Sunset": {
+      "mean": 6.57,
+      "median": 5.18,
+      "p90": 12.73
+    },
+    "Outer Mission": {
+      "mean": 7.08,
+      "median": 5.43,
+      "p90": 13.65
+    },
+    "Treasure Island": {
+      "mean": 9.27,
+      "median": 6.82,
+      "p90": 18.03
+    },
+    "Nob Hill": {
+      "mean": 5.72,
+      "median": 4.15,
+      "p90": 11.6
+    },
+    "Hayes Valley": {
+      "mean": 6.38,
+      "median": 4.97,
+      "p90": 12.63
+    },
+    "North Beach": {
+      "mean": 7.69,
+      "median": 6.08,
+      "p90": 14.88
+    },
+    "Lone Mountain/USF": {
+      "mean": 6.59,
+      "median": 5.03,
+      "p90": 12.72
+    },
+    "Potrero Hill": {
+      "mean": 7.64,
+      "median": 5.77,
+      "p90": 15.55
+    },
+    "Chinatown": {
+      "mean": 6.97,
+      "median": 5.0,
+      "p90": 14.48
+    },
+    "Twin Peaks": {
+      "mean": 7.55,
+      "median": 6.2,
+      "p90": 12.95
+    },
+    "Presidio Heights": {
+      "mean": 6.72,
+      "median": 5.4,
+      "p90": 12.4
+    },
+    "Russian Hill": {
+      "mean": 6.75,
+      "median": 5.18,
+      "p90": 12.8
+    },
+    "Portola": {
+      "mean": 7.56,
+      "median": 6.25,
+      "p90": 14.12
+    },
+    "Presidio": {
+      "mean": 9.16,
+      "median": 7.73,
+      "p90": 16.78
+    },
+    "Lincoln Park": {
+      "mean": 7.82,
+      "median": 6.03,
+      "p90": 12.98
+    },
+    "Seacliff": {
+      "mean": 7.23,
+      "median": 6.37,
+      "p90": 13.15
+    },
+    "McLaren Park": {
+      "mean": 7.65,
+      "median": 7.15,
+      "p90": 13.27
+    }
+  },
+  "by_priority": {
+    "2": {
+      "mean": 9.54,
+      "median": 8.23,
+      "p90": 17.52
+    },
+    "3": {
+      "mean": 5.45,
+      "median": 4.5,
+      "p90": 9.22
+    }
+  },
+  "total_incidents": 40239
+}

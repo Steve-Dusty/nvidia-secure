@@ -1,0 +1,26 @@
+# NVIDIA NIM Emergency Detection System
+# Cloud-based inference - no local GPU required
+
+# === REQUIRED (NVIDIA NIM) ===
+opencv-python>=4.8.0
+numpy>=1.24.0
+requests>=2.31.0
+python-dotenv>=1.0.0
+
+# === OPTIONAL (Legacy cuML - local GPU) ===
+# Only needed if using deprecated visual_event_detector.py
+# Requires NVIDIA GPU with CUDA
+#
+# Install via conda:
+# conda install -c rapidsai -c conda-forge cuml cudf cupy cudatoolkit=11.8
+#
+# cupy-cuda11x>=12.0.0
+# cudf>=23.0.0
+# cuml>=23.0.0
+# scikit-learn>=1.3.0
+# xgboost>=2.0.0
+
+# === OPTIONAL (Deep features) ===
+# Only needed for ResNet50 feature extraction
+# torch>=2.0.0
+# torchvision>=0.15.0
