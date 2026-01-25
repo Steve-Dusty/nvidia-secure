@@ -10,8 +10,23 @@ DIRECTORY = os.path.dirname(os.path.abspath(__file__))
 
 os.chdir(DIRECTORY)
 
+
+class QuietHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
+    """HTTP handler that suppresses SSL EOF errors (normal for video streaming)"""
+
+    def handle(self):
+        try:
+            super().handle()
+        except ssl.SSLEOFError:
+            pass  # Client closed connection early - normal for video
+        except BrokenPipeError:
+            pass  # Client disconnected
+        except ConnectionResetError:
+            pass  # Client reset connection
+
+
 server_address = ('0.0.0.0', PORT)
-httpd = http.server.HTTPServer(server_address, http.server.SimpleHTTPRequestHandler)
+httpd = http.server.HTTPServer(server_address, QuietHTTPRequestHandler)
 
 # Create SSL context
 context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)

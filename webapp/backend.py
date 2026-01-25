@@ -684,6 +684,25 @@ async def process_client(websocket):
         print(f"[CONNECTION] Client disconnected")
 
 
+from websockets.datastructures import Headers
+from websockets.http11 import Response
+
+async def health_check(connection, request):
+    """Handle direct browser visits to accept the SSL certificate"""
+    if request.headers.get("Upgrade", "").lower() != "websocket":
+        # Regular HTTP request - serve a simple page for cert acceptance
+        body = b"""<!DOCTYPE html>
+<html><head><title>AI Backend</title></head>
+<body style="font-family:system-ui;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;background:#0f1419;color:#22c55e;">
+<div style="text-align:center">
+<h1>Certificate Accepted</h1>
+<p>You can close this tab and return to the app.</p>
+</div>
+</body></html>"""
+        return Response(200, "OK", Headers([("Content-Type", "text/html")]), body)
+    return None  # Continue with WebSocket handshake
+
+
 async def main():
     print("=" * 60)
     print("SF Security Camera - Multi-Person Pose Detection")
@@ -704,10 +723,10 @@ async def main():
     if os.path.exists(cert_path) and os.path.exists(key_path):
         ssl_context.load_cert_chain(cert_path, key_path)
         print("[SERVER] SSL enabled")
-        server = await websockets.serve(process_client, "0.0.0.0", 8765, ssl=ssl_context)
+        server = await websockets.serve(process_client, "0.0.0.0", 8765, ssl=ssl_context, process_request=health_check)
     else:
         print("[SERVER] No SSL (development mode)")
-        server = await websockets.serve(process_client, "0.0.0.0", 8765)
+        server = await websockets.serve(process_client, "0.0.0.0", 8765, process_request=health_check)
 
     print("[SERVER] WebSocket listening on port 8765")
     print("=" * 60)
