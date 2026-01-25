@@ -1,0 +1,4 @@
+file 'fight_data/noFight/nofi100.mp4'
+file 'fight_data/noFight/nofi101.mp4'
+file 'fight_data/noFight/nofi102.mp4'
+file 'fight_data/noFight/nofi103.mp4'

@@ -1,10 +1,7 @@
 #!/usr/bin/env python3
 """
-SF Security Camera Backend - Multi-Person Pose Detection
-- YOLOv8-Pose for multi-person skeleton detection
-- Action recognition based on body keypoints
-- Audio analysis (speech detection, volume levels, sound classification)
-- Real-time streaming of all events
+Nimverse Backend - Multi-Person Pose Detection
+Real-time streaming of detection events
 """
 
 import asyncio
@@ -19,14 +16,15 @@ from collections import defaultdict
 from datetime import datetime
 import os
 
-# YOLOv8 Pose
+from dotenv import load_dotenv
+load_dotenv()
+
 from ultralytics import YOLO
 
-# Configuration
 CONFIDENCE_THRESHOLD = 0.5
 AUDIO_THRESHOLD = 0.02
 
-# YOLO Pose keypoint indices
+# Keypoint indices
 NOSE = 0
 LEFT_EYE = 1
 RIGHT_EYE = 2
@@ -47,20 +45,19 @@ RIGHT_ANKLE = 16
 
 
 class MultiPersonPoseDetector:
-    """Detect multiple people and their poses using YOLOv8-Pose"""
+    """Multi-person pose detection"""
 
     def __init__(self):
-        print("[DETECTOR] Loading YOLOv8-Pose model...")
+        print("[DETECTOR] Loading BodyPose model...")
         self.model = YOLO('yolov8n-pose.pt')
         self.next_person_id = 0
-        self.tracked_persons = {}  # Store previous frame positions for ID tracking
-        print("[DETECTOR] YOLOv8-Pose multi-person detector loaded")
+        self.tracked_persons = {}
+        print("[DETECTOR] BodyPose detector ready")
 
     def detect(self, frame):
         """Detect all people and their poses in frame"""
         h, w = frame.shape[:2]
 
-        # Run YOLO pose detection
         results = self.model(frame, verbose=False, conf=CONFIDENCE_THRESHOLD)
 
         detections = []
@@ -368,7 +365,6 @@ class AudioAnalyzer:
         self.volume_history = []
         self.speech_duration = 0
         self.silence_duration = 0
-        print("[AUDIO] Audio analyzer initialized")
 
     def analyze(self, audio_data):
         if audio_data is None or len(audio_data) == 0:
@@ -614,6 +610,12 @@ async def process_client(websocket):
 
                 # Process video frame
                 if data.get("type") == "frame" and data.get("data"):
+                    # Include camera ID in response
+                    cam_id = data.get("cam_id", 0)
+                    cam_name = data.get("cam_name", "CAM 1")
+                    response["cam_id"] = cam_id
+                    response["cam_name"] = cam_name
+
                     img_data = base64.b64decode(data["data"].split(",")[1])
                     nparr = np.frombuffer(img_data, np.uint8)
                     frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
@@ -674,17 +676,28 @@ async def process_client(websocket):
         print(f"[CONNECTION] Client disconnected")
 
 
+from websockets.datastructures import Headers
+from websockets.http11 import Response
+
+async def health_check(connection, request):
+    """Handle direct browser visits to accept the SSL certificate"""
+    if request.headers.get("Upgrade", "").lower() != "websocket":
+        # Regular HTTP request - serve a simple page for cert acceptance
+        body = b"""<!DOCTYPE html>
+<html><head><title>AI Backend</title></head>
+<body style="font-family:system-ui;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;background:#0f1419;color:#22c55e;">
+<div style="text-align:center">
+<h1>Certificate Accepted</h1>
+<p>You can close this tab and return to the app.</p>
+</div>
+</body></html>"""
+        return Response(200, "OK", Headers([("Content-Type", "text/html")]), body)
+    return None  # Continue with WebSocket handshake
+
+
 async def main():
     print("=" * 60)
-    print("SF Security Camera - Multi-Person Pose Detection")
-    print("=" * 60)
-    print("Features:")
-    print("  - YOLOv8-Pose multi-person detection")
-    print("  - Per-person tracking with consistent IDs")
-    print("  - Actions: standing, walking, running, sitting, crouching,")
-    print("             falling, lying, bending, hand_raised")
-    print("  - Audio: speech, shouting, help keyword, cough")
-    print("  - Incidents: falls, fights, person down, distress")
+    print("Nimverse - NVIDIA DeepStream Backend")
     print("=" * 60)
 
     ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
@@ -694,10 +707,10 @@ async def main():
     if os.path.exists(cert_path) and os.path.exists(key_path):
         ssl_context.load_cert_chain(cert_path, key_path)
         print("[SERVER] SSL enabled")
-        server = await websockets.serve(process_client, "0.0.0.0", 8765, ssl=ssl_context)
+        server = await websockets.serve(process_client, "0.0.0.0", 8765, ssl=ssl_context, process_request=health_check)
     else:
         print("[SERVER] No SSL (development mode)")
-        server = await websockets.serve(process_client, "0.0.0.0", 8765)
+        server = await websockets.serve(process_client, "0.0.0.0", 8765, process_request=health_check)
 
     print("[SERVER] WebSocket listening on port 8765")
     print("=" * 60)

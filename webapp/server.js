@@ -169,6 +169,6 @@ try {
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-    console.log(`SF Security Dashboard running at http://localhost:${PORT}`);
+    console.log(`Nimverse Dashboard running at http://localhost:${PORT}`);
     console.log(`WebSocket server running on port 8765`);
 });
