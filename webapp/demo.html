@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SF SafeCity - Live Demo</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f1419;
+            color: #e7e9ea;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+        }
+        header {
+            background: linear-gradient(180deg, #1a1f26 0%, #0f1419 100%);
+            padding: 0 24px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 56px;
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            color: white;
+        }
+        h1 {
+            font-size: 18px;
+            font-weight: 600;
+            background: linear-gradient(90deg, #e7e9ea 0%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .header-right { display: flex; align-items: center; gap: 20px; font-size: 13px; color: #9ca3af; }
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .status-indicator.on {
+            background: rgba(34, 197, 94, 0.1);
+            border-color: rgba(34, 197, 94, 0.2);
+        }
+        .status-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: #6b7280;
+        }
+        .status-dot.on { background: #22c55e; box-shadow: 0 0 10px #22c55e; animation: pulse 2s infinite; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .status-text { font-weight: 500; }
+        .status-text.on { color: #22c55e; }
+
+        .container { display: flex; height: calc(100vh - 56px); }
+
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 16px;
+            gap: 16px;
+            overflow: hidden;
+        }
+
+        .camera-view {
+            flex: 1;
+            background: #000;
+            position: relative;
+            overflow: hidden;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            min-height: 0;
+        }
+        .camera-view.alert {
+            border-color: #ef4444 !important;
+            animation: alert-flash 0.5s infinite;
+        }
+        @keyframes alert-flash {
+            0%, 100% { border-color: #ef4444; box-shadow: 0 0 30px rgba(239,68,68,0.5); }
+            50% { border-color: #f59e0b; box-shadow: 0 0 50px rgba(245,158,11,0.5); }
+        }
+
+        .video-container {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #webcam {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            background: #000;
+        }
+        #canvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+        }
+
+        .cam-label {
+            position: absolute;
+            top: 16px; left: 16px;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(8px);
+            padding: 8px 16px;
+            font-size: 14px;
+            border-radius: 8px;
+            border-left: 4px solid #6b7280;
+            color: #9ca3af;
+            font-weight: 600;
+            z-index: 10;
+        }
+        .cam-label.live {
+            border-color: #22c55e;
+            color: #22c55e;
+        }
+
+        .audio-panel {
+            position: absolute;
+            top: 16px; right: 16px;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(8px);
+            padding: 12px 16px;
+            border-radius: 8px;
+            z-index: 10;
+            min-width: 220px;
+        }
+        .audio-meter-label {
+            font-size: 10px;
+            color: #6b7280;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .audio-meter-bar {
+            height: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+        .audio-meter-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #22c55e 0%, #f59e0b 70%, #ef4444 100%);
+            border-radius: 4px;
+            transition: width 0.05s;
+            width: 0%;
+        }
+        .transcript-box {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 6px;
+            padding: 8px 10px;
+            font-size: 12px;
+            color: #e7e9ea;
+            min-height: 40px;
+            max-height: 60px;
+            overflow-y: auto;
+        }
+        .transcript-box.alert {
+            border-color: #8b5cf6;
+            background: rgba(139, 92, 246, 0.2);
+        }
+        .transcript-label {
+            font-size: 10px;
+            color: #6b7280;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        /* ALERT BANNER */
+        .alert-banner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(239,68,68,0.95);
+            backdrop-filter: blur(8px);
+            color: #fff;
+            text-align: center;
+            padding: 24px 48px;
+            font-size: 28px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border-radius: 16px;
+            display: none;
+            animation: banner-pulse 0.5s infinite;
+            z-index: 100;
+            box-shadow: 0 0 60px rgba(239,68,68,0.8);
+        }
+        .alert-banner.fight { background: rgba(239,68,68,0.95); }
+        .alert-banner.fall { background: rgba(245,158,11,0.95); color: #000; }
+        .alert-banner.help { background: rgba(139,92,246,0.95); }
+        .alert-banner.show { display: block; }
+        @keyframes banner-pulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            50% { transform: translate(-50%, -50%) scale(1.02); opacity: 0.9; }
+        }
+
+        .alert-sub {
+            font-size: 14px;
+            font-weight: 400;
+            margin-top: 8px;
+            letter-spacing: 0;
+            opacity: 0.9;
+        }
+
+        /* Pose info overlay */
+        .pose-info {
+            position: absolute;
+            bottom: 16px; left: 16px;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(8px);
+            padding: 12px 16px;
+            border-radius: 8px;
+            z-index: 10;
+            font-size: 12px;
+        }
+        .pose-info-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 24px;
+            margin-bottom: 4px;
+        }
+        .pose-info-label { color: #6b7280; }
+        .pose-info-value { color: #e7e9ea; font-weight: 600; }
+        .pose-info-value.warning { color: #f59e0b; }
+        .pose-info-value.danger { color: #ef4444; }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 12px;
+            padding: 12px 16px;
+            background: #1a1f26;
+            border-radius: 12px;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        button {
+            padding: 12px 24px;
+            background: rgba(255,255,255,0.05);
+            color: #e7e9ea;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        button:hover { background: rgba(255,255,255,0.1); }
+        button.active {
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            border-color: transparent;
+            color: white;
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 320px;
+            background: #1a1f26;
+            border-left: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            flex-direction: column;
+            font-size: 12px;
+        }
+        .sidebar-section {
+            padding: 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .sidebar-section h3 {
+            color: #6b7280;
+            font-size: 10px;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+        }
+        .stat-box {
+            flex: 1;
+            text-align: center;
+            padding: 12px 8px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 8px;
+        }
+        .stat-val { font-size: 28px; font-weight: 700; }
+        .stat-val.red { color: #ef4444; }
+        .stat-val.yellow { color: #f59e0b; }
+        .stat-val.green { color: #22c55e; }
+        .stat-val.purple { color: #8b5cf6; }
+        .stat-lbl { font-size: 9px; color: #6b7280; margin-top: 4px; text-transform: uppercase; }
+
+        .log {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+            background: rgba(0,0,0,0.2);
+        }
+        .log-entry {
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            border-left: 3px solid #6b7280;
+            font-size: 12px;
+            background: rgba(255,255,255,0.02);
+            border-radius: 0 8px 8px 0;
+        }
+        .log-entry.fight { border-color: #ef4444; background: rgba(239,68,68,0.1); }
+        .log-entry.fall { border-color: #f59e0b; background: rgba(245,158,11,0.1); }
+        .log-entry.help { border-color: #8b5cf6; background: rgba(139,92,246,0.1); }
+        .log-time { color: #6b7280; margin-right: 8px; font-size: 10px; }
+
+        /* Demo badge */
+        .demo-badge {
+            background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+            color: #000;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Loading overlay */
+        .loading-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+        }
+        .loading-overlay.hidden { display: none; }
+        .loading-spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid rgba(139, 92, 246, 0.3);
+            border-top-color: #8b5cf6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 16px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .loading-text {
+            color: #9ca3af;
+            font-size: 14px;
+        }
+
+        /* Error message */
+        .error-msg {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            padding: 24px;
+            border-radius: 12px;
+            text-align: center;
+            max-width: 400px;
+            display: none;
+        }
+        .error-msg.show { display: block; }
+        .error-msg h3 { color: #ef4444; margin-bottom: 8px; }
+        .error-msg p { color: #9ca3af; font-size: 13px; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <div class="logo-icon">SF</div>
+            <h1>SafeCity Live Demo</h1>
+        </div>
+        <div class="header-right">
+            <span class="demo-badge">Live Demo</span>
+            <span id="datetime"></span>
+            <div class="status-indicator" id="statusIndicator">
+                <div class="status-dot" id="statusDot"></div>
+                <span class="status-text" id="statusText">Click Start</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="main">
+            <div class="camera-view" id="cameraView">
+                <div class="video-container">
+                    <video id="webcam" autoplay playsinline muted></video>
+                </div>
+                <canvas id="canvas"></canvas>
+
+                <div class="cam-label" id="camLabel">WEBCAM - OFFLINE</div>
+
+                <div class="audio-panel">
+                    <div class="audio-meter-label">
+                        <span>Audio Level</span>
+                        <span id="audioLevel">0%</span>
+                    </div>
+                    <div class="audio-meter-bar">
+                        <div class="audio-meter-fill" id="audioFill"></div>
+                    </div>
+                    <div class="transcript-label">Speech Recognition</div>
+                    <div class="transcript-box" id="transcriptBox">Waiting for speech...</div>
+                </div>
+
+                <div class="pose-info" id="poseInfo">
+                    <div class="pose-info-row">
+                        <span class="pose-info-label">Status:</span>
+                        <span class="pose-info-value" id="poseStatus">No person detected</span>
+                    </div>
+                    <div class="pose-info-row">
+                        <span class="pose-info-label">Body Angle:</span>
+                        <span class="pose-info-value" id="angleValue">--</span>
+                    </div>
+                    <div class="pose-info-row">
+                        <span class="pose-info-label">Action:</span>
+                        <span class="pose-info-value" id="actionValue">--</span>
+                    </div>
+                </div>
+
+                <div class="alert-banner" id="alertBanner">
+                    <div id="alertText">ALERT</div>
+                    <div class="alert-sub" id="alertSub"></div>
+                </div>
+
+                <div class="loading-overlay" id="loadingOverlay">
+                    <div class="loading-spinner"></div>
+                    <div class="loading-text" id="loadingText">Initializing...</div>
+                </div>
+
+                <div class="error-msg" id="errorMsg">
+                    <h3>Camera Access Required</h3>
+                    <p>Please allow camera and microphone access to use the demo.</p>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button id="btnStart" class="active">Start Demo</button>
+                <button id="btnStop" disabled>Stop</button>
+                <span style="flex:1"></span>
+                <span style="color:#6b7280;font-size:12px;" id="techLabel">MediaPipe Pose + Web Speech API</span>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="sidebar-section">
+                <h3>Detection Stats</h3>
+                <div class="stats-row">
+                    <div class="stat-box">
+                        <div class="stat-val yellow" id="statFalls">0</div>
+                        <div class="stat-lbl">Falls</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-val red" id="statFights">0</div>
+                        <div class="stat-lbl">Fights</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-val purple" id="statHelp">0</div>
+                        <div class="stat-lbl">Help Calls</div>
+                    </div>
+                </div>
+            </div>
+            <div class="sidebar-section">
+                <h3>How to Test</h3>
+                <div style="color:#9ca3af; line-height:1.6;">
+                    <p style="margin-bottom:8px;"><strong style="color:#f59e0b;">Fall:</strong> Tilt body sideways or duck down</p>
+                    <p style="margin-bottom:8px;"><strong style="color:#f59e0b;">Distress:</strong> Hands on/near head</p>
+                    <p style="margin-bottom:8px;"><strong style="color:#ef4444;">Fight:</strong> Say "stop", "get off", "let go"</p>
+                    <p><strong style="color:#8b5cf6;">Help:</strong> Say "help", "emergency", "911"</p>
+                </div>
+            </div>
+            <div class="sidebar-section" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+                <h3>Event Log</h3>
+                <div class="log" id="log">
+                    <div class="log-entry">
+                        <span class="log-time">--:--:--</span>
+                        Waiting for demo to start...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MediaPipe Pose -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
+
+    <script>
+        // ============ STATE ============
+        let isRunning = false;
+        let pose = null;
+        let videoStream = null;
+        let animationId = null;
+        let recognition = null;
+
+        // Audio
+        let audioContext = null;
+        let analyser = null;
+
+        // Detection state
+        const stats = { falls: 0, fights: 0, help: 0 };
+        let poseHistory = [];
+        let lastAlertTime = { fall: 0, fight: 0, help: 0 };
+        const ALERT_COOLDOWN = 4000;
+
+        // Thresholds
+        const FALL_ANGLE_THRESHOLD = 50;
+
+        // DOM
+        const video = document.getElementById('webcam');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // ============ INIT ============
+        function init() {
+            updateTime();
+            setInterval(updateTime, 1000);
+            document.getElementById('btnStart').onclick = startDemo;
+            document.getElementById('btnStop').onclick = stopDemo;
+            log('System ready - click Start Demo');
+        }
+
+        function updateTime() {
+            document.getElementById('datetime').textContent = new Date().toLocaleString();
+        }
+
+        function showLoading(text) {
+            document.getElementById('loadingText').textContent = text;
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.add('hidden');
+        }
+
+        // ============ START DEMO ============
+        async function startDemo() {
+            try {
+                showLoading('Requesting camera access...');
+                log('Starting demo...');
+
+                // Get webcam + mic
+                videoStream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
+                    audio: true
+                });
+
+                video.srcObject = videoStream;
+                await video.play();
+
+                log('Camera connected');
+                showLoading('Loading MediaPipe Pose AI...');
+
+                // Init MediaPipe
+                pose = new Pose({
+                    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
+                });
+
+                pose.setOptions({
+                    modelComplexity: 1,
+                    smoothLandmarks: true,
+                    enableSegmentation: false,
+                    minDetectionConfidence: 0.5,
+                    minTrackingConfidence: 0.5
+                });
+
+                pose.onResults(onPoseResults);
+
+                // Wait for model to load
+                await pose.initialize();
+                log('MediaPipe Pose loaded');
+
+                // Setup audio
+                setupAudio(videoStream);
+
+                // Setup speech recognition
+                setupSpeechRecognition();
+
+                // Start processing
+                isRunning = true;
+                processFrame();
+
+                // Update UI
+                hideLoading();
+                document.getElementById('btnStart').disabled = true;
+                document.getElementById('btnStop').disabled = false;
+                document.getElementById('camLabel').textContent = 'WEBCAM - LIVE';
+                document.getElementById('camLabel').classList.add('live');
+                document.getElementById('statusDot').classList.add('on');
+                document.getElementById('statusIndicator').classList.add('on');
+                document.getElementById('statusText').textContent = 'AI Active';
+                document.getElementById('statusText').classList.add('on');
+
+                log('AI detection active', 'success');
+
+            } catch (error) {
+                console.error('Error:', error);
+                hideLoading();
+                document.getElementById('errorMsg').classList.add('show');
+                log('Error: ' + error.message, 'error');
+            }
+        }
+
+        // ============ FRAME PROCESSING ============
+        async function processFrame() {
+            if (!isRunning || !pose) return;
+
+            // Size canvas to match video display
+            const rect = video.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+
+            try {
+                await pose.send({ image: video });
+            } catch (e) {
+                console.error('Pose error:', e);
+            }
+
+            animationId = requestAnimationFrame(processFrame);
+        }
+
+        // ============ POSE RESULTS ============
+        function onPoseResults(results) {
+            if (!isRunning) return;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (results.poseLandmarks && results.poseLandmarks.length > 0) {
+                const landmarks = results.poseLandmarks;
+
+                // Analyze pose and get action
+                const { action, actionClass } = analyzePose(landmarks);
+
+                // Draw YOLO-style bounding box with action label
+                drawBoundingBox(landmarks, action, actionClass);
+
+                document.getElementById('poseStatus').textContent = 'Person detected';
+                document.getElementById('poseStatus').classList.remove('danger');
+            } else {
+                document.getElementById('poseStatus').textContent = 'No person detected';
+                document.getElementById('poseStatus').classList.add('danger');
+                document.getElementById('angleValue').textContent = '--';
+                document.getElementById('actionValue').textContent = '--';
+            }
+        }
+
+        // ============ DRAWING - YOLO STYLE BOX ONLY ============
+        function drawBoundingBox(landmarks, action, actionClass) {
+            // Calculate bounding box from landmarks
+            let minX = 1, minY = 1, maxX = 0, maxY = 0;
+
+            landmarks.forEach(lm => {
+                if (lm.visibility > 0.5) {
+                    minX = Math.min(minX, lm.x);
+                    minY = Math.min(minY, lm.y);
+                    maxX = Math.max(maxX, lm.x);
+                    maxY = Math.max(maxY, lm.y);
+                }
+            });
+
+            // Add padding
+            const padX = (maxX - minX) * 0.15;
+            const padY = (maxY - minY) * 0.1;
+            minX = Math.max(0, minX - padX);
+            minY = Math.max(0, minY - padY);
+            maxX = Math.min(1, maxX + padX);
+            maxY = Math.min(1, maxY + padY);
+
+            const x = minX * canvas.width;
+            const y = minY * canvas.height;
+            const w = (maxX - minX) * canvas.width;
+            const h = (maxY - minY) * canvas.height;
+
+            // Box color based on status
+            let boxColor = '#22c55e'; // green = normal
+            if (actionClass === 'danger') boxColor = '#ef4444'; // red
+            else if (actionClass === 'warning') boxColor = '#f59e0b'; // yellow
+
+            // Draw thick box
+            ctx.strokeStyle = boxColor;
+            ctx.lineWidth = 4;
+            ctx.strokeRect(x, y, w, h);
+
+            // Draw label background
+            const label = action ? `PERSON - ${action.toUpperCase()}` : 'PERSON';
+            ctx.font = 'bold 16px Inter, sans-serif';
+            const textWidth = ctx.measureText(label).width;
+            ctx.fillStyle = boxColor;
+            ctx.fillRect(x, y - 28, textWidth + 20, 28);
+
+            // Draw label text
+            ctx.fillStyle = boxColor === '#f59e0b' ? '#000' : '#fff';
+            ctx.fillText(label, x + 10, y - 8);
+
+            // Draw confidence bar
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.fillRect(x, y + h + 4, w, 6);
+            ctx.fillStyle = boxColor;
+            ctx.fillRect(x, y + h + 4, w * 0.95, 6);
+        }
+
+        // ============ POSE ANALYSIS ============
+        function analyzePose(landmarks) {
+            const leftShoulder = landmarks[11];
+            const rightShoulder = landmarks[12];
+            const leftHip = landmarks[23];
+            const rightHip = landmarks[24];
+            const leftWrist = landmarks[15];
+            const rightWrist = landmarks[16];
+            const leftElbow = landmarks[13];
+            const rightElbow = landmarks[14];
+            const nose = landmarks[0];
+
+            // Calculate body midpoints
+            const shoulderMidX = (leftShoulder.x + rightShoulder.x) / 2;
+            const shoulderMidY = (leftShoulder.y + rightShoulder.y) / 2;
+            const hipMidX = (leftHip.x + rightHip.x) / 2;
+            const hipMidY = (leftHip.y + rightHip.y) / 2;
+
+            // Body angle from vertical (0 = upright)
+            const bodyAngle = Math.abs(Math.atan2(shoulderMidX - hipMidX, hipMidY - shoulderMidY) * (180 / Math.PI));
+
+            // Update display
+            document.getElementById('angleValue').textContent = Math.round(bodyAngle) + '°';
+            document.getElementById('angleValue').className = 'pose-info-value' +
+                (bodyAngle > 50 ? ' danger' : bodyAngle > 35 ? ' warning' : '');
+
+            // Store history
+            const now = Date.now();
+            poseHistory.push({
+                time: now,
+                hipY: hipMidY,
+                hipX: hipMidX,
+                shoulderY: shoulderMidY,
+                noseY: nose.y,
+                leftWrist: { x: leftWrist.x, y: leftWrist.y },
+                rightWrist: { x: rightWrist.x, y: rightWrist.y },
+                bodyAngle: bodyAngle
+            });
+
+            // Keep last 20 frames
+            while (poseHistory.length > 20) poseHistory.shift();
+
+            // Default state
+            let action = 'Normal';
+            let actionClass = '';
+
+            // Need enough history for motion analysis
+            if (poseHistory.length >= 8) {
+                const oldPose = poseHistory[0];
+                const midPose = poseHistory[Math.floor(poseHistory.length / 2)];
+                const newPose = poseHistory[poseHistory.length - 1];
+                const timeDiff = (newPose.time - oldPose.time) / 1000;
+
+                // ===== FALL DETECTION =====
+                // Check for rapid downward movement + body tilting
+                const hipDropSpeed = (newPose.hipY - oldPose.hipY) / timeDiff;
+                const noseDropSpeed = (newPose.noseY - oldPose.noseY) / timeDiff;
+
+                if (bodyAngle > 50 && (hipDropSpeed > 0.3 || noseDropSpeed > 0.4)) {
+                    action = 'FALLING';
+                    actionClass = 'danger';
+                    triggerAlert('fall', 'FALL DETECTED!', 'Person falling down');
+                } else if (bodyAngle > 60) {
+                    action = 'DOWN';
+                    actionClass = 'danger';
+                    triggerAlert('fall', 'PERSON DOWN!', 'Person on the ground');
+                }
+
+                // ===== DISTRESS DETECTION =====
+                // Hands on head or covering face (distress pose)
+                const handsNearHead = (
+                    (Math.abs(leftWrist.y - nose.y) < 0.15 && leftWrist.visibility > 0.5) ||
+                    (Math.abs(rightWrist.y - nose.y) < 0.15 && rightWrist.visibility > 0.5)
+                );
+
+                // Hand raised high (calling for help)
+                const handRaisedHigh = (
+                    (leftWrist.y < leftShoulder.y - 0.15 && leftWrist.visibility > 0.5) ||
+                    (rightWrist.y < rightShoulder.y - 0.15 && rightWrist.visibility > 0.5)
+                );
+
+                if (handRaisedHigh && action === 'Normal') {
+                    action = 'HAND RAISED';
+                    actionClass = 'warning';
+                }
+
+                if (handsNearHead && action === 'Normal') {
+                    action = 'DISTRESS';
+                    actionClass = 'warning';
+                }
+
+                // Fight detection removed - requires proper ML model
+                // Will only trigger via speech recognition (shouting, aggressive words)
+            }
+
+            document.getElementById('actionValue').textContent = action;
+            document.getElementById('actionValue').className = 'pose-info-value ' + actionClass;
+
+            return { action, actionClass };
+        }
+
+        // ============ AUDIO ============
+        function setupAudio(stream) {
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 256;
+
+                const source = audioContext.createMediaStreamSource(stream);
+                source.connect(analyser);
+
+                monitorAudio();
+                log('Audio monitoring active');
+            } catch (e) {
+                log('Audio setup failed: ' + e.message);
+            }
+        }
+
+        function monitorAudio() {
+            if (!isRunning || !analyser) return;
+
+            const data = new Uint8Array(analyser.frequencyBinCount);
+            analyser.getByteFrequencyData(data);
+
+            const avg = data.reduce((a, b) => a + b) / data.length;
+            const level = Math.min(100, Math.round((avg / 128) * 100));
+
+            document.getElementById('audioFill').style.width = level + '%';
+            document.getElementById('audioLevel').textContent = level + '%';
+
+            requestAnimationFrame(monitorAudio);
+        }
+
+        // ============ SPEECH RECOGNITION ============
+        function setupSpeechRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+            if (!SpeechRecognition) {
+                log('Speech recognition not supported');
+                document.getElementById('transcriptBox').textContent = 'Speech recognition not available in this browser';
+                return;
+            }
+
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US';
+
+            recognition.onresult = (event) => {
+                let transcript = '';
+                let isFinal = false;
+
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    transcript += event.results[i][0].transcript;
+                    if (event.results[i].isFinal) isFinal = true;
+                }
+
+                document.getElementById('transcriptBox').textContent = transcript || 'Listening...';
+
+                // Check for keywords
+                const lower = transcript.toLowerCase();
+
+                // Help/distress keywords
+                const helpKeywords = ['help', 'emergency', 'call 911', '911', 'somebody help', 'fire', 'police', 'ambulance', 'save me'];
+
+                // Fight/aggression keywords
+                const fightKeywords = ['stop', 'get off', 'let go', 'don\'t touch', 'back off', 'get away', 'leave me alone', 'fighting', 'attack'];
+
+                let detected = false;
+
+                for (const keyword of fightKeywords) {
+                    if (lower.includes(keyword)) {
+                        document.getElementById('transcriptBox').classList.add('alert');
+                        triggerAlert('fight', 'ALTERCATION DETECTED!', `Heard: "${transcript}"`);
+                        detected = true;
+                        break;
+                    }
+                }
+
+                if (!detected) {
+                    for (const keyword of helpKeywords) {
+                        if (lower.includes(keyword)) {
+                            document.getElementById('transcriptBox').classList.add('alert');
+                            triggerAlert('help', 'HELP CALL DETECTED!', `Heard: "${transcript}"`);
+                            break;
+                        }
+                    }
+                }
+
+                if (isFinal) {
+                    setTimeout(() => {
+                        document.getElementById('transcriptBox').classList.remove('alert');
+                    }, 2000);
+                }
+            };
+
+            recognition.onerror = (event) => {
+                console.log('Speech error:', event.error);
+                if (event.error === 'no-speech') {
+                    document.getElementById('transcriptBox').textContent = 'Listening...';
+                }
+            };
+
+            recognition.onend = () => {
+                if (isRunning) {
+                    recognition.start(); // Restart
+                }
+            };
+
+            recognition.start();
+            log('Speech recognition active');
+            document.getElementById('transcriptBox').textContent = 'Listening...';
+        }
+
+        // ============ ALERTS ============
+        function triggerAlert(type, title, subtitle) {
+            const now = Date.now();
+            if (now - lastAlertTime[type] < ALERT_COOLDOWN) return;
+            lastAlertTime[type] = now;
+
+            // Update stats
+            stats[type === 'fall' ? 'falls' : type === 'fight' ? 'fights' : 'help']++;
+            updateStats();
+
+            // Show banner
+            const banner = document.getElementById('alertBanner');
+            const cameraView = document.getElementById('cameraView');
+
+            document.getElementById('alertText').textContent = title;
+            document.getElementById('alertSub').textContent = subtitle;
+
+            banner.className = 'alert-banner show ' + type;
+            cameraView.classList.add('alert');
+
+            // Play sound
+            playAlertSound(type);
+
+            // Log
+            log(title + ' - ' + subtitle, type);
+
+            // Hide after 3s
+            setTimeout(() => {
+                banner.classList.remove('show');
+                cameraView.classList.remove('alert');
+            }, 3000);
+        }
+
+        function playAlertSound(type) {
+            if (!audioContext) return;
+
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+
+            osc.frequency.value = type === 'fight' ? 880 : type === 'fall' ? 660 : 550;
+            gain.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+
+            osc.start();
+            osc.stop(audioContext.currentTime + 0.3);
+        }
+
+        function updateStats() {
+            document.getElementById('statFalls').textContent = stats.falls;
+            document.getElementById('statFights').textContent = stats.fights;
+            document.getElementById('statHelp').textContent = stats.help;
+        }
+
+        // ============ LOGGING ============
+        function log(message, level = '') {
+            const logEl = document.getElementById('log');
+            const time = new Date().toTimeString().slice(0, 8);
+            const entry = document.createElement('div');
+            entry.className = 'log-entry ' + level;
+            entry.innerHTML = `<span class="log-time">${time}</span>${message}`;
+            logEl.insertBefore(entry, logEl.firstChild);
+            while (logEl.children.length > 50) logEl.removeChild(logEl.lastChild);
+        }
+
+        // ============ STOP ============
+        function stopDemo() {
+            isRunning = false;
+
+            if (animationId) cancelAnimationFrame(animationId);
+            if (recognition) recognition.stop();
+            if (videoStream) videoStream.getTracks().forEach(t => t.stop());
+            if (audioContext) audioContext.close();
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            poseHistory = [];
+
+            document.getElementById('btnStart').disabled = false;
+            document.getElementById('btnStop').disabled = true;
+            document.getElementById('camLabel').textContent = 'WEBCAM - OFFLINE';
+            document.getElementById('camLabel').classList.remove('live');
+            document.getElementById('statusDot').classList.remove('on');
+            document.getElementById('statusIndicator').classList.remove('on');
+            document.getElementById('statusText').textContent = 'Stopped';
+            document.getElementById('statusText').classList.remove('on');
+            document.getElementById('transcriptBox').textContent = 'Stopped';
+
+            log('Demo stopped');
+        }
+
+        // Start
+        init();
+    </script>
+</body>
+</html>
