@@ -19,7 +19,11 @@ from collections import defaultdict
 from datetime import datetime
 import os
 
-# YOLOv8 Pose
+# Load environment variables
+from dotenv import load_dotenv
+load_dotenv()
+
+# YOLOv8 Pose (works on CPU/GPU, no NVIDIA required)
 from ultralytics import YOLO
 
 # Configuration
@@ -614,6 +618,12 @@ async def process_client(websocket):
 
                 # Process video frame
                 if data.get("type") == "frame" and data.get("data"):
+                    # Include camera ID in response
+                    cam_id = data.get("cam_id", 0)
+                    cam_name = data.get("cam_name", "CAM 1")
+                    response["cam_id"] = cam_id
+                    response["cam_name"] = cam_name
+
                     img_data = base64.b64decode(data["data"].split(",")[1])
                     nparr = np.frombuffer(img_data, np.uint8)
                     frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
