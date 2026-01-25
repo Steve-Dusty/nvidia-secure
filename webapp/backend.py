@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-SF Security Camera Backend - Multi-Person Pose Detection
+Nimverse Backend - Multi-Person Pose Detection
 Real-time streaming of detection events
 """
 
@@ -697,7 +697,7 @@ async def health_check(connection, request):
 
 async def main():
     print("=" * 60)
-    print("SF Security Camera - NVIDIA DeepStream Backend")
+    print("Nimverse - NVIDIA DeepStream Backend")
     print("=" * 60)
 
     ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)

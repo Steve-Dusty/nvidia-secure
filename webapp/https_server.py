@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Simple HTTPS server for SF Security Camera frontend"""
+"""Simple HTTPS server for Nimverse frontend"""
 
 import http.server
 import ssl

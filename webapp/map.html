@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SF SafeCity - Community Monitor</title>
+    <title>Nimverse - Community Monitor</title>
     <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
     <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet" />
     <!-- Vapi Web SDK -->
@@ -1063,7 +1063,7 @@
     <header>
         <div class="logo">
             <div class="logo-icon">SF</div>
-            <h1>SafeCity Monitor</h1>
+            <h1>Nimverse Monitor</h1>
         </div>
         <div class="header-nav">
             <a href="index.html" class="nav-btn">
@@ -1477,7 +1477,7 @@
             const responseType = isMedical ? 'medical' : 'security';
             const nearestFacility = isMedical ? 'SF General Hospital on Potrero Avenue' : 'SFPD Central Station on Vallejo Street';
 
-            const systemPrompt = `You are an AI emergency dispatch assistant for SF SafeCity, a real-time security monitoring system in San Francisco.
+            const systemPrompt = `You are an AI emergency dispatch assistant for Nimverse, a real-time security monitoring system in San Francisco.
 
 CURRENT INCIDENT DETAILS:
 - Type: ${incidentType}
@@ -1491,7 +1491,7 @@ YOUR ROLE:
 You are calling a security responder to dispatch them to this incident. Stay on the line and provide full situational awareness.
 
 CONVERSATION FLOW:
-1. INTRODUCE: "This is SF SafeCity AI Emergency Dispatch with an active ${incidentType} alert."
+1. INTRODUCE: "This is Nimverse AI Emergency Dispatch with an active ${incidentType} alert."
 
 2. DESCRIBE THE SITUATION:
    - Explain what the AI cameras detected (${incidentType})
@@ -1556,8 +1556,8 @@ Remember: Your job is to be a helpful dispatch assistant. Keep the conversation 
                                 provider: 'vapi',
                                 voiceId: 'Elliot'
                             },
-                            name: 'SF SafeCity Dispatch',
-                            firstMessage: `Alert! This is SF SafeCity AI Emergency Dispatch. We have an active ${incidentType} incident at ${camLocation}. Our AI surveillance system detected this with ${confidence}% confidence. I'm dispatching you to the scene now. Are you available to respond?`
+                            name: 'Nimverse Dispatch',
+                            firstMessage: `Alert! This is Nimverse AI Emergency Dispatch. We have an active ${incidentType} incident at ${camLocation}. Our AI surveillance system detected this with ${confidence}% confidence. I'm dispatching you to the scene now. Are you available to respond?`
                         }
                     })
                 });
@@ -1637,7 +1637,7 @@ Remember: Your job is to be a helpful dispatch assistant. Keep the conversation 
                             model: 'gpt-4',
                             messages: [{
                                 role: 'system',
-                                content: `You are an AI emergency dispatch assistant for SF SafeCity security monitoring.
+                                content: `You are an AI emergency dispatch assistant for Nimverse security monitoring.
 
 An incident was detected:
 - Type: ${incidentType}
@@ -1651,8 +1651,8 @@ Start by briefly announcing the emergency and asking if the person can confirm. 
                             provider: 'vapi',
                             voiceId: 'Elliot'
                         },
-                        name: 'SF SafeCity Dispatch',
-                        firstMessage: `Alert! This is SF SafeCity AI Dispatch. A ${incidentType} has been detected at ${location} with ${callState.mlScore}% confidence. Emergency responders are being routed. Are you available to respond?`
+                        name: 'Nimverse Dispatch',
+                        firstMessage: `Alert! This is Nimverse AI Dispatch. A ${incidentType} has been detected at ${location} with ${callState.mlScore}% confidence. Emergency responders are being routed. Are you available to respond?`
                     });
 
                     return; // Events will handle the rest
@@ -1673,7 +1673,7 @@ Start by briefly announcing the emergency and asking if the person can confirm. 
                 updateCallUI();
 
                 setTimeout(() => addTranscriptLine('AI DISPATCH', `Calling emergency contact...`), 2000);
-                setTimeout(() => addTranscriptLine('AI DISPATCH', `This is SF SafeCity AI Dispatch.`), 5000);
+                setTimeout(() => addTranscriptLine('AI DISPATCH', `This is Nimverse AI Dispatch.`), 5000);
                 setTimeout(() => addTranscriptLine('AI DISPATCH', `A ${incidentType} detected at ${location}.`), 8000);
             } else {
                 addTranscriptLine('SYSTEM', `Phone call failed: ${result.error}`);
