@@ -1094,7 +1094,8 @@
         };
 
         // Vapi Configuration
-        const VAPI_API_KEY = 'b4f9e9a8-2399-41f5-8b40-ef01ae62fe84';
+        const VAPI_API_KEY = '0c02bf40-9972-4847-abec-1af8daa762d4';
+        const VAPI_PHONE_NUMBER_ID = '3c879049-07ac-4505-a117-f8ed6c54196d';
         const EMERGENCY_PHONE = '+18587331359';
         let currentCallId = null;
         let vapiWeb = null;
@@ -1137,22 +1138,68 @@
 
         // Make outbound call via Vapi REST API
         async function makeVapiCall(incidentType, location, confidence) {
-            const systemPrompt = `You are an AI emergency dispatch assistant for SF SafeCity security monitoring system.
+            // Get camera info for routing details
+            const camName = location.split(' • ')[0];
+            const cam = CAMERAS.find(c => c.name === camName);
+            const camLocation = cam ? cam.location : 'Downtown San Francisco';
+            const camCoords = cam ? `${cam.lat.toFixed(4)}, ${cam.lng.toFixed(4)}` : '37.7849, -122.4094';
 
-An incident has been automatically detected by our AI surveillance system:
-- Incident Type: ${incidentType}
-- Location: ${location}
-- AI Confidence: ${confidence}%
+            // Determine response type and nearest facility
+            const isMedical = incidentType.includes('HELP') || incidentType.includes('FALL') || incidentType.includes('MEDICAL');
+            const responseType = isMedical ? 'medical' : 'security';
+            const nearestFacility = isMedical ? 'SF General Hospital on Potrero Avenue' : 'SFPD Central Station on Vallejo Street';
 
-When the call connects:
-1. Introduce yourself as SF SafeCity AI Dispatch
-2. Explain that your automated system detected a ${incidentType} at ${location}
-3. Ask if they can confirm the situation or if this was a false alarm
-4. If confirmed, let them know emergency responders have been dispatched
-5. Ask if there's any additional information they can provide
-6. Thank them and end the call professionally
+            const systemPrompt = `You are an AI emergency dispatch assistant for SF SafeCity, a real-time security monitoring system in San Francisco.
 
-Keep your responses concise and professional. Speak clearly and calmly.`;
+CURRENT INCIDENT DETAILS:
+- Type: ${incidentType}
+- Location: ${camLocation} (${location})
+- GPS Coordinates: ${camCoords}
+- AI Confidence Score: ${confidence}%
+- Response Type: ${responseType.toUpperCase()}
+- Nearest Response Unit: ${nearestFacility}
+
+YOUR ROLE:
+You are calling a security responder to dispatch them to this incident. Stay on the line and provide full situational awareness.
+
+CONVERSATION FLOW:
+1. INTRODUCE: "This is SF SafeCity AI Emergency Dispatch with an active ${incidentType} alert."
+
+2. DESCRIBE THE SITUATION:
+   - Explain what the AI cameras detected (${incidentType})
+   - Give the exact location: ${camLocation}, near the intersection
+   - Mention the confidence level: ${confidence}% certain
+   - Describe what this type of incident typically involves
+
+3. PROVIDE ROUTING GUIDANCE:
+   - Tell them the fastest route to get there
+   - For ${camLocation}, suggest major cross streets and landmarks
+   - Mention current traffic conditions if relevant
+   - Provide GPS coordinates: ${camCoords}
+
+4. STAY ENGAGED:
+   - Answer any questions they have about the incident
+   - Provide additional details about the scene
+   - Confirm when they're en route
+   - Offer to stay on the line for updates
+
+5. ONLY END CALL WHEN:
+   - They confirm they've arrived on scene, OR
+   - They explicitly say they don't need more information, OR
+   - They ask you to hang up
+
+INCIDENT-SPECIFIC DETAILS:
+${incidentType.includes('FIGHT') ? `- Multiple individuals appear to be in physical altercation
+- Recommend approaching with caution
+- May need backup depending on number of people involved` : ''}
+${incidentType.includes('FALL') ? `- Person detected falling or on the ground
+- May need medical attention
+- Check for injuries upon arrival` : ''}
+${incidentType.includes('HELP') ? `- Person appears to be signaling for help (raised hand/waving)
+- Could be medical emergency or distress
+- Approach to assess situation` : ''}
+
+Remember: Your job is to be a helpful dispatch assistant. Keep the conversation going naturally. Ask if they need any more information. Don't rush to end the call.`;
 
             try {
                 const response = await fetch('https://api.vapi.ai/call/phone', {
@@ -1162,7 +1209,7 @@ Keep your responses concise and professional. Speak clearly and calmly.`;
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        phoneNumberId: null,
+                        phoneNumberId: VAPI_PHONE_NUMBER_ID,
                         customer: {
                             number: EMERGENCY_PHONE
                         },
@@ -1178,11 +1225,11 @@ Keep your responses concise and professional. Speak clearly and calmly.`;
                                 ]
                             },
                             voice: {
-                                provider: '11labs',
-                                voiceId: 'rachel'
+                                provider: 'vapi',
+                                voiceId: 'Elliot'
                             },
                             name: 'SF SafeCity Dispatch',
-                            firstMessage: `Hello, this is SF SafeCity AI Emergency Dispatch. Our automated surveillance system has detected a ${incidentType} at ${location} with ${confidence}% confidence. Can you confirm if there is an emergency at this location?`
+                            firstMessage: `Alert! This is SF SafeCity AI Emergency Dispatch. We have an active ${incidentType} incident at ${camLocation}. Our AI surveillance system detected this with ${confidence}% confidence. I'm dispatching you to the scene now. Are you available to respond?`
                         }
                     })
                 });
@@ -1273,11 +1320,11 @@ Start by briefly announcing the emergency and asking if the person can confirm. 
                             }]
                         },
                         voice: {
-                            provider: '11labs',
-                            voiceId: 'rachel'
+                            provider: 'vapi',
+                            voiceId: 'Elliot'
                         },
                         name: 'SF SafeCity Dispatch',
-                        firstMessage: `Alert! This is SF SafeCity AI Dispatch. A ${incidentType} has been detected at ${location} with ${callState.mlScore}% confidence. Emergency responders are being routed. Can you confirm the situation?`
+                        firstMessage: `Alert! This is SF SafeCity AI Dispatch. A ${incidentType} has been detected at ${location} with ${callState.mlScore}% confidence. Emergency responders are being routed. Are you available to respond?`
                     });
 
                     return; // Events will handle the rest
@@ -1561,20 +1608,17 @@ Start by briefly announcing the emergency and asking if the person can confirm. 
                 map.setPaintProperty(routeLayerId, 'line-opacity', opacity);
             }, 50);
 
-            // Add destination marker
+            // Add destination marker (cleaner style)
             const destMarkerId = `dest-marker-${incidentId}`;
             const destEl = document.createElement('div');
             destEl.className = 'route-destination-marker';
             destEl.style.cssText = `
-                width: 30px; height: 30px;
+                width: 16px; height: 16px;
                 background: ${routeColor};
                 border: 3px solid white;
                 border-radius: 50%;
-                display: flex; align-items: center; justify-content: center;
-                box-shadow: 0 0 20px ${routeColor};
-                animation: dest-pulse 1s infinite;
+                box-shadow: 0 0 15px ${routeColor}, 0 0 30px ${routeColor}50;
             `;
-            destEl.innerHTML = incidentType.includes('HELP') ? '🏥' : '🚨';
 
             const destMarker = new mapboxgl.Marker(destEl)
                 .setLngLat([endPoint.lng, endPoint.lat])
