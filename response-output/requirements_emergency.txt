@@ -1,0 +1,10 @@
+# Emergency Response Agent Requirements
+# For NVIDIA NGC Llama integration with VAPI
+
+# Core dependencies
+requests>=2.31.0
+python-dotenv>=1.0.0
+
+# Optional: For enhanced functionality
+# geopy>=2.4.0  # Advanced geocoding
+# phonenumbers>=8.13.0  # Phone number validation

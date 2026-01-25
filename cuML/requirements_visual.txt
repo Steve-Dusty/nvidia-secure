@@ -1,0 +1,42 @@
+# Visual Event Detection System Requirements
+# NVIDIA RAPIDS cuML + Computer Vision
+
+# Core RAPIDS Libraries (GPU-accelerated)
+cupy-cuda11x>=12.0.0  # Or cupy-cuda12x for CUDA 12
+cudf>=23.0.0
+cuml>=23.0.0
+
+# Computer Vision
+opencv-python>=4.8.0
+opencv-contrib-python>=4.8.0
+
+# Deep Learning (Optional - for enhanced features)
+torch>=2.0.0  # PyTorch for ResNet features
+torchvision>=0.15.0
+
+# Scientific Computing
+numpy>=1.24.0
+scikit-learn>=1.3.0
+
+# Data Handling
+pandas>=2.0.0
+
+# Utilities
+python-dotenv>=1.0.0
+tqdm>=4.65.0
+
+# For integration with emergency response
+requests>=2.31.0
+
+# Optional: Video processing enhancements
+# ffmpeg-python>=0.2.0
+# imageio>=2.31.0
+
+# Optional: Advanced person detection
+# ultralytics>=8.0.0  # YOLOv8
+# onnxruntime-gpu>=1.15.0  # For ONNX model inference
+
+# Note: NVIDIA RAPIDS requires CUDA-enabled GPU
+# Installation:
+# - CUDA 11.x: pip install cupy-cuda11x cudf-cu11 cuml-cu11
+# - CUDA 12.x: pip install cupy-cuda12x cudf-cu12 cuml-cu12
