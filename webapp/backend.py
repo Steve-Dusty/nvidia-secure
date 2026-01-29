@@ -4,7 +4,7 @@ SF Security Camera Backend - NVIDIA NIM Multi-Person Detection
 
 Uses NVIDIA NIM hosted models for:
 - Person detection and tracking (Grounding DINO)
-- Pose estimation and action recognition (Florence-2 + BodyPose)
+- Pose estimation and action recognition (Nemotron VL + BodyPose)
 - Audio analysis (Parakeet ASR + Audio Embedding)
 - Real-time streaming of all events
 
@@ -59,7 +59,7 @@ class NVIDIANIMDetector:
 
     Models used:
     - nvidia/grounding-dino: Zero-shot person detection
-    - microsoft/florence-2: Scene understanding and action detection
+    - nvidia/nemotron-nano-12b-v2-vl: Scene understanding and action detection
     - nvidia/bodypose-estimation: 17-keypoint pose estimation
 
     Replaces local YOLOv8-Pose with cloud-based inference.
@@ -81,7 +81,7 @@ class NVIDIANIMDetector:
         self.tracked_persons = {}
         print("[DETECTOR] NVIDIA NIM multi-person detector ready")
         print("  - Person detection: nvidia/grounding-dino")
-        print("  - Action detection: microsoft/florence-2")
+        print("  - Action detection: nvidia/nemotron-nano-12b-v2-vl")
         print("  - Pose estimation: nvidia/bodypose-estimation")
 
     def _encode_image(self, frame: np.ndarray) -> str:
@@ -113,9 +113,9 @@ class NVIDIANIMDetector:
             print(f"[NIM] Grounding DINO error: {e}")
             return []
 
-    def _call_florence_actions(self, image_b64: str) -> Dict:
-        """Get action descriptions using Florence-2"""
-        url = f"{NVIDIA_API_BASE}/vlm/microsoft/florence-2"
+    def _call_nemotron_actions(self, image_b64: str) -> Dict:
+        """Get action descriptions using Nemotron VL"""
+        url = f"{NVIDIA_API_BASE}/vlm/nvidia/nemotron-nano-12b-v2-vl"
 
         payload = {
             "messages": [{
@@ -136,7 +136,7 @@ class NVIDIANIMDetector:
             text = result.get("choices", [{}])[0].get("message", {}).get("content", "")
             return {"description": text, "actions": self._parse_actions(text)}
         except Exception as e:
-            print(f"[NIM] Florence-2 error: {e}")
+            print(f"[NIM] Nemotron VL error: {e}")
             return {"description": "", "actions": []}
 
     def _call_bodypose(self, image_b64: str) -> List[Dict]:
@@ -176,7 +176,7 @@ class NVIDIANIMDetector:
         return detections
 
     def _parse_actions(self, text: str) -> List[str]:
-        """Parse action keywords from Florence-2 response"""
+        """Parse action keywords from Nemotron VL response"""
         actions = []
         text_lower = text.lower()
 
@@ -210,9 +210,9 @@ class NVIDIANIMDetector:
         # Get detections from Grounding DINO
         dino_detections = self._call_grounding_dino(image_b64)
 
-        # Get actions from Florence-2
-        florence_result = self._call_florence_actions(image_b64)
-        detected_actions = florence_result.get("actions", ["standing"])
+        # Get actions from Nemotron VL
+        nemotron_result = self._call_nemotron_actions(image_b64)
+        detected_actions = nemotron_result.get("actions", ["standing"])
 
         # Get pose keypoints
         poses = self._call_bodypose(image_b64)

@@ -88,14 +88,14 @@ class EmergencyDetectionSystem:
     Unified emergency detection using NVIDIA NIM hosted models.
 
     Visual Pipeline (NVIDIA NIM):
-        Camera → Florence-2/DINO (action detection) → Severity Assessment → Dispatch
+        Camera → Nemotron VL/DINO (action detection) → Severity Assessment → Dispatch
 
     Audio Pipeline (NVIDIA NIM):
         Microphone → Parakeet ASR (speech) → Audio Classification → Alert
 
     Models:
         Visual:
-            - microsoft/florence-2: Scene understanding, action detection
+            - nvidia/nemotron-nano-12b-v2-vl: Scene understanding, action detection
             - nvidia/grounding-dino: Person detection and tracking
             - meta/sam2-hiera-large: Precise segmentation
 
@@ -104,7 +104,8 @@ class EmergencyDetectionSystem:
             - nvidia/canary-1b: Multilingual ASR
             - nvidia/audio-embedding: Sound event classification
 
-    Note: Llama model (for dispatch reasoning) is NOT replaced - it remains NGC fine-tuned.
+        Dispatch:
+            - nvidia/llama-3.1-nemotron-nano-8b-v1: Emergency response reasoning
     """
 
     def __init__(self, camera_id: str = "CAM-001",
@@ -133,14 +134,14 @@ class EmergencyDetectionSystem:
         # Set alert callback
         self.integrated_system.set_alert_callback(self._handle_alert)
 
-        print("  Visual: microsoft/florence-2, nvidia/grounding-dino")
+        print("  Visual: nvidia/nemotron-nano-12b-v2-vl, nvidia/grounding-dino")
         print("  Audio:  nvidia/parakeet-ctc-1.1b, nvidia/audio-embedding")
 
-        # Optional Llama-based dispatch (NOT replaced - uses NGC fine-tuned Llama)
+        # Nemotron-based dispatch
         self.dispatch_enabled = enable_dispatch and DISPATCH_AVAILABLE
         if self.dispatch_enabled:
             self.emergency_agent = EmergencyResponseAgent()
-            print("  Dispatch: ENABLED (NGC Llama)")
+            print("  Dispatch: ENABLED (Nemotron Nano)")
         else:
             self.emergency_agent = None
             print("  Dispatch: DISABLED")
@@ -371,7 +372,7 @@ def main():
         epilog="""
 Models used (all NVIDIA NIM hosted):
   Visual:
-    - microsoft/florence-2: Scene understanding, action detection
+    - nvidia/nemotron-nano-12b-v2-vl: Scene understanding, action detection
     - nvidia/grounding-dino: Person detection
     - meta/sam2-hiera-large: Segmentation
 
@@ -380,8 +381,8 @@ Models used (all NVIDIA NIM hosted):
     - nvidia/canary-1b: Multilingual ASR
     - nvidia/audio-embedding: Sound classification
 
-  Dispatch (unchanged):
-    - NGC fine-tuned Llama: Emergency response reasoning
+  Dispatch:
+    - nvidia/llama-3.1-nemotron-nano-8b-v1: Emergency response reasoning
 
 Environment:
   NVIDIA_API_KEY: Required for NIM API access

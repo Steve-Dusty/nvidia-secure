@@ -79,20 +79,20 @@ class NVIDIANIMVisualInference:
     Visual inference using NVIDIA NIM hosted models.
 
     Models used:
-    - microsoft/florence-2: Vision-language model for scene understanding and action detection
+    - nvidia/nemotron-nano-12b-v2-vl: Nemotron vision-language model for scene understanding and action detection
     - nvidia/grounding-dino: Object detection with natural language grounding
     - meta/sam2-hiera-large: Segment Anything for precise person segmentation
     """
 
     # NVIDIA NIM Model Endpoints
     MODELS = {
-        "scene_understanding": "microsoft/florence-2",
+        "scene_understanding": "nvidia/nemotron-nano-12b-v2-vl",
         "object_detection": "nvidia/grounding-dino",
         "segmentation": "meta/sam2-hiera-large",
-        "action_recognition": "microsoft/florence-2",  # Uses VQA capability
+        "action_recognition": "nvidia/nemotron-nano-12b-v2-vl",  # Uses VQA capability
     }
 
-    # Action detection prompts for Florence-2
+    # Action detection prompts for Nemotron VL
     ACTION_PROMPTS = {
         "detect_actions": "Describe what each person in this image is doing. List actions: standing, walking, running, fighting, falling, lying down.",
         "detect_fight": "Is there a fight or physical altercation happening in this image? Answer yes or no and describe.",
@@ -176,13 +176,14 @@ class NVIDIANIMVisualInference:
 
         return detections
 
-    def analyze_actions_florence(self, image: np.ndarray) -> Dict:
+    def analyze_actions_nemotron(self, image: np.ndarray) -> Dict:
         """
-        Analyze human actions using Microsoft Florence-2.
+        Analyze human actions using NVIDIA Nemotron VL.
 
-        Model: microsoft/florence-2
-        - Vision-language model with strong action understanding
-        - Can describe what people are doing in detail
+        Model: nvidia/nemotron-nano-12b-v2-vl
+        - Nemotron vision-language model with strong action understanding
+        - Multi-image and video understanding capabilities
+        - Visual Q&A and summarization
         """
         image_b64 = self._encode_image(image)
 
@@ -204,7 +205,7 @@ class NVIDIANIMVisualInference:
                 "top_p": 0.9
             }
 
-            response = self._call_nim_api("microsoft/florence-2", payload)
+            response = self._call_nim_api("nvidia/nemotron-nano-12b-v2-vl", payload)
 
             if "choices" in response:
                 results[prompt_key] = response["choices"][0].get("message", {}).get("content", "")
@@ -234,7 +235,7 @@ class NVIDIANIMVisualInference:
         return detections
 
     def _classify_action_from_text(self, action_text: str) -> Tuple[ActionType, float]:
-        """Classify action type from Florence-2 text response"""
+        """Classify action type from Nemotron VL text response"""
         text_lower = action_text.lower()
 
         # Priority order for classification
@@ -313,7 +314,7 @@ class NVIDIANIMVisualInference:
         detections = self.detect_persons_grounding_dino(image)
 
         # Step 2: Analyze actions
-        action_analysis = self.analyze_actions_florence(image)
+        action_analysis = self.analyze_actions_nemotron(image)
 
         # Step 3: Build person list with actions
         persons = []

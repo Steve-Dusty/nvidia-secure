@@ -100,7 +100,7 @@ class NVIDIANIMIntegratedSystem:
     Integrated emergency detection using NVIDIA NIM.
 
     Combines:
-    - Visual: Florence-2, Grounding DINO, SAM2 for action/person detection
+    - Visual: Nemotron VL, Grounding DINO, SAM2 for action/person detection
     - Audio: Parakeet, Canary for speech/sound detection
     - Logic: Multi-modal fusion for emergency classification
 
