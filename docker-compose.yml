@@ -16,7 +16,7 @@ services:
       - DISPLAY=${DISPLAY}
     volumes:
       - ./config:/app/config:ro
-      - ./scripts:/app/scripts:ro
+      - ./pipeline:/app/scripts:ro
       - ./models:/app/models
       - ./recordings:/app/recordings
       - ./logs:/app/logs

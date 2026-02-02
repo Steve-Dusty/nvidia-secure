@@ -53,7 +53,7 @@ from nvidia_nim_integrated import (
 
 # Optional emergency dispatch (Llama-based)
 try:
-    sys.path.insert(0, '../response-output')
+    sys.path.insert(0, '../agents')
     from emergency_response_agent import EmergencyResponseAgent, EmergencyEvent, Location
     DISPATCH_AVAILABLE = True
 except ImportError:

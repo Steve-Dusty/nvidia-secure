@@ -53,7 +53,7 @@ case "$MODE" in
             -e DISPLAY=$DISPLAY \
             -v /tmp/.X11-unix:/tmp/.X11-unix \
             -v "$SCRIPT_DIR/config:/app/config:ro" \
-            -v "$SCRIPT_DIR/scripts:/app/scripts:ro" \
+            -v "$SCRIPT_DIR/pipeline:/app/scripts:ro" \
             -v "$SCRIPT_DIR/models:/app/models" \
             -v "$SCRIPT_DIR/recordings:/app/recordings" \
             -v "$SCRIPT_DIR/logs:/app/logs" \
@@ -76,7 +76,7 @@ case "$MODE" in
             -e DISPLAY=$DISPLAY \
             -v /tmp/.X11-unix:/tmp/.X11-unix \
             -v "$SCRIPT_DIR/config:/app/config:ro" \
-            -v "$SCRIPT_DIR/scripts:/app/scripts:ro" \
+            -v "$SCRIPT_DIR/pipeline:/app/scripts:ro" \
             -v "$SCRIPT_DIR/models:/app/models" \
             -v "$SCRIPT_DIR/recordings:/app/recordings" \
             -v "$SCRIPT_DIR/logs:/app/logs" \
@@ -100,7 +100,7 @@ case "$MODE" in
             -e DISPLAY=$DISPLAY \
             -v /tmp/.X11-unix:/tmp/.X11-unix \
             -v "$SCRIPT_DIR/config:/app/config:ro" \
-            -v "$SCRIPT_DIR/scripts:/app/scripts:ro" \
+            -v "$SCRIPT_DIR/pipeline:/app/scripts:ro" \
             -v "$SCRIPT_DIR/models:/app/models" \
             -v "$SCRIPT_DIR/recordings:/app/recordings" \
             -v "$SCRIPT_DIR/logs:/app/logs" \

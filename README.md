@@ -15,7 +15,7 @@ cp .env.example .env
 
 # 3. Install Python dependencies
 pip install -r requirements.txt
-pip install -r cuML/requirements.txt
+pip install -r inference/requirements.txt
 
 # 4. Start the backend
 python webapp/backend.py
@@ -166,7 +166,7 @@ All datasets are sourced from **San Francisco Open Data Portal** ([data.sfgov.or
 - **Usage**: Non-emergency medical routing
 
 ### Synthetic Training Data
-Located in `scripts-medresp/`:
+Located in `training-medresp/`:
 - `nvidia_llama_complete_training.jsonl` - 50K+ training examples
 - `routing_training.jsonl` - Facility routing training data
 - `response_time_analysis.json` - Response time patterns
@@ -177,21 +177,25 @@ All synthetic data was generated using real SF incident patterns and facility da
 
 ```
 nvidia-secure/
-├── cuML/                          # NVIDIA NIM inference modules
+├── inference/                     # NVIDIA NIM inference (x86)
 │   ├── nvidia_nim_visual.py       # Visual inference (Florence-2, DINO, SAM2)
 │   ├── nvidia_nim_audio.py        # Audio inference (Parakeet, Canary)
 │   ├── nvidia_nim_integrated.py   # Combined pipeline
 │   └── main.py                    # Entry point
-├── scripts-arm/                   # DGX Spark ARM deployment
+├── inference-arm/                 # DGX Spark ARM deployment
 │   ├── Dockerfile.arm
 │   ├── nim_inference_arm.py
 │   └── setup_arm.sh
-├── scripts-medresp/               # Emergency response training
+├── training-medresp/              # Emergency response training data
 │   ├── generate_llama_training.py
 │   ├── sf_medical_incidents.json
 │   └── sf_health_facilities.json
-├── response-output/               # Llama dispatch agent
+├── agents/                        # Llama dispatch agent
 │   └── emergency_response_agent.py
+├── pipeline/                      # DeepStream detection pipeline
+│   ├── sf_security_pipeline.py
+│   ├── run_detection.py
+│   └── download_models.sh
 ├── webapp/                        # Web dashboard
 │   ├── backend.py                 # WebSocket server
 │   ├── index.html                 # 9-camera grid
@@ -208,7 +212,7 @@ nvidia-secure/
 
 ```bash
 # Terminal 1: Start NIM backend
-python cuML/main.py
+python inference/main.py
 
 # Terminal 2: Start web server
 cd webapp && npm start
